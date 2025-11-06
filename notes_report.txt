@@ -1,0 +1,10 @@
+qc
+
+- quality of the reads
+- duplication of the reads
+- Overrepresented sequences (seq that might have a lot of adapters left in it, or rRNA or contaminant (easy to trim out))
+- GC content (most of the species peak around 50, but as long as you don't see crazy peaks coming out it's ok) (not sufficient to discard read if it does not impact the analysis downstream)
+
+why is it impotant to know how many reads we sequenced?
+- make sure there are not crazy different number of reads between samples 
+- check the proportion of align reads over overall reads
