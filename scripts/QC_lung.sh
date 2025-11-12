@@ -9,7 +9,6 @@
 #SBATCH --error=/data/users/iambrogetti/RNA-seq/errors/error_%x_%j.e \
 #SBATCH --mail-type=end,error \
 #SBATCH --mail-user=isaac.ambrogetti@unifr.ch \
-#SBATCH --cpus-per-task=2
 
 module load FastQC/0.11.9-Java-11 
 module load fastp/0.23.4-GCC-10.3.0
