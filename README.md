@@ -41,8 +41,11 @@ No need to trim the reads, they're good quality. I just noticed an increment of 
     - `sum <file>` to verify the files are intact
 
 - Produce all required index files for Hisat2
+    - `ref_indexing.sh`
 
 - For each sample separately, map the reads to the reference genome using Hisat2. The correct strandedness setting for this library prep protocol is RF.
+    - `mapping_par.slurm` core code
+    - `map_run.sh` cycle over mapping_par
 - `samtools view` convert sam to bam
 - `samtools sort` sort bam
 - `samtools index` index the sorted bam
