@@ -8,3 +8,22 @@ qc
 why is it impotant to know how many reads we sequenced?
 - make sure there are not crazy different number of reads between samples 
 - check the proportion of align reads over overall reads
+
+
+MAPPING STEP
+
+check on IGV:
+exons
+check strandness of the reads
+
+we're still missing a score of the expression of the gene, we just have info on if a read matches and where.
+
+
+
+Find uniquely concordantly mapped -> 
+e.g., 97% overall alignment rate /data/users/iambrogetti/RNA-seq/data/sam/SRR7821918_summary.txt
+
+
+Step 4
+take gtf file (directions of the exons on the genome)
+use it to understand how many reads align to each gene

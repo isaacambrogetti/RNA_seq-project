@@ -49,9 +49,13 @@ No need to trim the reads, they're good quality. I just noticed an increment of 
 - `samtools view` convert sam to bam
 - `samtools sort` sort bam
 - `samtools index` index the sorted bam
+    - all the previous steps are done with `post_mapping.slurm` and `view_loop.sh`
 
 Bonus: Use the Integrative Genomics Viewer to inspect some of your bam files. It is easiest if you download the bam
 files to your local machine for this step. To reduce file size, you could use samtools view to extract a smaller genomic
 region. 
 
 
+### Count the number of reads per gene
+
+Summarize multiple paired-end datasets - use `featureCounts` then a `sed` command to clear the name of the columns to just the SRC name. And finally used `multiqc` to get the visualization of the summary feature counts.
