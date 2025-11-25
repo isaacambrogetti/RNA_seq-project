@@ -2,7 +2,7 @@
 
 #SBATCH --cpus-per-task=8 \
 #SBATCH --mem-per-cpu=5G \
-#SBATCH --time=02:00:00 \
+#SBATCH --time=01:00:00 \
 #SBATCH --partition=pibu_el8 \
 #SBATCH --job-name=reads_per_gene \
 #SBATCH --output=/data/users/iambrogetti/RNA-seq/logs/outputs/%x_%j.o \
@@ -19,14 +19,14 @@ OUTPUT_FILE="/data/users/iambrogetti/RNA-seq/data/bam/reads_gene_counts.txt"
 TMP="/data/users/iambrogetti/RNA-seq/.tmp"
 QC_FILE="/data/users/iambrogetti/RNA-seq/data/bam"
 
-touch $OUTPUT_FILE
-chmod 777 $OUTPUT_FILE
 
 apptainer exec $CONTAINER_feature featureCounts \
     -a $GENOME_FILES -o $OUTPUT_FILE \
     -p -B -C -s 2 --tmpDir $TMP \
     -T $SLURM_CPUS_PER_TASK $INPUT_FILES
 
-sed -E -i 's#[^[:space:]]*/(SRR[0-9]+)\_sorted\.bam#\1#g' $OUTPUT_FILE
+sed -E -i 's#[^[:space:]]*/(SRR[0-9]+)\_sorted\.bam#\1#g' $OUTPUT_FILE # clear the col names to just the SRC name
+
+sed -E -i 's#[^[:space:]]*/(SRR[0-9]+)\_sorted\.bam#\1#g' ${OUTPUT_FILE}.summary
 
 apptainer exec ${CONTAINER_multiqc} multiqc ${QC_FILE}/*.summary -o ${QC_FILE}

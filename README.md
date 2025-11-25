@@ -25,7 +25,7 @@ For interactive sessions:
 
 ## 1. Quality checks
 
-- `FastQC` to assess the quality of the data
+1. `FastQC` to assess the quality of the data
     - created `QC_lung.sh` for the quality control script
     - run `QC_lung.sh` via `for_QC.sh` to iterate through all the samples
     - _output_ 
@@ -40,7 +40,7 @@ For interactive sessions:
             └── ...
             ``` 
 
-- `multiQC` to get the summary report
+2. `multiQC` to get the summary report
     - crated  and run `multiQC.sh` to create a summary report of all the files created in the step before.
     - _output_
         - folder multiqc_data stores all the raw data it used to build the final report
@@ -75,16 +75,21 @@ _Documentation_
         | **5–6** | Additional lookup tables | Faster searching |
         | **7–8** (if present) | Extensions for large genomes | Memory optimization |
 
-++++++++++++++++++++++++++++++++++++
-
-3. For each sample separately, map the reads to the reference genome using Hisat2. The correct strandedness setting for this library prep protocol is RF.
+3. For each paired sample, separately map the reads to the reference genome using Hisat2. The correct strandedness setting for this library prep protocol is RF.
     - `mapping_par.slurm` core code
-    - `map_run.sh` cycle over mapping_par
-4. Samtools (`post_mapping.slurm` and `view_loop.sh`)
+    - `map_run.sh` cycle over mapping_par for each sample
+    - _output_
+        - SAM files (human readable file that contains all the alignment information)
+        - summary file containing the mapping statistics
+
+4. To process the SAM files and obtain sorted and indexed BAM via (`post_mapping.slurm` and `view_loop.sh`).
     - `samtools view` convert sam to bam
     - `samtools sort` sort bam
     - `samtools index` index the sorted bam
-
+    - _output_
+        - .bam
+        - _sorted.bam
+        - _sorted.bai (sorted bam index)
     
 Bonus: Use the Integrative Genomics Viewer to inspect some of your bam files. It is easiest if you download the bam
 files to your local machine for this step. To reduce file size, you could use samtools view to extract a smaller genomic
@@ -94,12 +99,33 @@ _Documentation_
 - Hisat2
     - https://daehwankimlab.github.io/hisat2/manual/
     - https://github.com/DaehwanKimLab/hisat2
-- 
+- samtools
+    - https://www.htslib.org/doc/samtools.html
 
 
 ## 3. Count the number of reads per gene
 
-Summarize multiple paired-end datasets - use `featureCounts` then a `sed` command to clear the name of the columns to just the SRC name. And finally used `multiqc` to get the visualization of the summary feature counts.
+The script `reads_per_gene.sh` Use all of your bam files as input for featureCounts to produce a table of counts containing the number of reads per gene in each sample.
+
+- `featureCounts`
+    - Takes in input the GTF file and the list of the sorted BAM files to produce a table containing Genes ~ Samples.
+        | Options | Function |
+        | ------- | ------- |
+        | -p | treat reads as paired-end |
+        | -B | require both ends mapped to count a fragment |
+        | -C | exclude chimeric fragments |
+        | -s 2 | strandedness = 2 (reverse strand / RF library) |
+    - _output_
+        - `.txt` count file with header/comment lines and then a table (genes × samples)
+        - `.summary` with per-sample assignment counts
+
+- `sed`
+    - Replaces any path ending with `.../SRRNNNNNN_sorted.bam` in header columns with just `SRRNNNNNN` (keeps only the SRR identifier). 
+    - _output_
+        - `.txt` inplace modification of the input count file
+
+- `multiqc`
+    - obtain the multiqc report for the `.summary` file
 
 _Documentation_
 - featureCounts
@@ -107,7 +133,7 @@ _Documentation_
     - https://rnnh.github.io/bioinfo-notebook/docs/featureCounts.html
 
 
-## 4. 
+## 4. Exploratory data analysis
 do heat map and other stuff
 
 

@@ -26,3 +26,5 @@ apptainer exec $CONTAINER hisat2 \
     --rna-strandness RF \
     --summary-file /data/users/iambrogetti/RNA-seq/data/sam/${3}_summary.txt \
     -p $SLURM_CPUS_PER_TASK
+
+# --new-summary can be used for a more detailed summary (more useful for WC)
