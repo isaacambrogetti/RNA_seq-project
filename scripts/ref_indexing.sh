@@ -18,8 +18,8 @@ OUTPUT_DIR="/data/users/iambrogetti/RNA-seq/data/ref_genome/Mus_musculus.GRCm39"
 
 echo "Starting unzipping .fa and .gtf"
 
-#gunzip -k "${INPUT_DIR}Mus_musculus.GRCm39.115.gtf.gz"
-#gunzip -k "${INPUT_DIR}Mus_musculus.GRCm39.dna_sm.primary_assembly.fa.gz"
+gunzip -k "${INPUT_DIR}Mus_musculus.GRCm39.115.gtf.gz"  # needed unzipped in the featureCounts step
+gunzip -k "${INPUT_DIR}Mus_musculus.GRCm39.dna_sm.primary_assembly.fa.gz"
 
 echo "Starting reference genome indexing"
 
