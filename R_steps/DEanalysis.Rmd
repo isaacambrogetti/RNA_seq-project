@@ -1,0 +1,237 @@
+---
+title: "DE analysis"
+output: html_document
+---
+
+Differential expression analysis aims at distinguish the cluster of genes that are over- or under- represented in each sample. Comparing case and control samples aims at identifying which are the genes correlated to the disease.
+
+To help us in this analysis use DESeq2.
+
+
+### Preparatory steps
+Import the dataframe and filter unuseful information
+```{r}
+data <- read.table("reads_gene_counts.txt", 
+                   header = TRUE, 
+                   sep = "\t")
+colnames(data)
+dim(data)
+```
+
+results in a table with 78334 obs for 21 variables (15 of which are our samples).
+Then, filter for the columns corresponding to the samples and ignore the rest of the information. Specifically, remove the columns containing Chr, Start, End, Strand and Length.
+
+```{r}
+data <- data[,-2:-6]
+colnames(data)
+```
+
+Create a matrix ready to feed into DESeq2. It has to be "numeric".
+```{r}
+rownames(data) <- data[,1]   # set first column as row names
+data <- data[ , -1]          # remove the first column
+mat <- data.matrix(data)
+mat[1:10, 1:5]
+dim(mat)
+```
+
+## DESeq2
+Install DESeq2
+```
+if (!require("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+
+BiocManager::install("DESeq2")
+```
+
+Get the sample information into a table containing the sample name and to which group it belongs.
+```{r}
+sample_info <- read.delim(
+  "sample_info.txt",
+  header = TRUE,
+  sep = " ",
+  stringsAsFactors = FALSE,
+  check.names = FALSE
+)
+sample_info
+```
+
+Now give the data to DEseq2 so that it can create a dss variable.
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+dss <- DESeq2::DESeqDataSetFromMatrix(countData = mat,
+                               colData = sample_info,
+                               design= ~ Group)
+```
+
+
+Now remove the dependence of the variance on the mean by running `DESeq2::vst()` on dss. For visualization, we typically do not want to consider the experimental groups so set `blind = TRUE`.
+
+```{r}
+vsd <- DESeq2::vst(dss, blind = TRUE)
+```
+
+plot the PCA to check whether it is all right with the data and it is possible to distinguish in the 4 clusters where they belong to.
+
+```{r}
+DESeq2::plotPCA(vsd, intgroup = "Group")
+```
+
+
+DESeq2::plotPCA() does NOT return the PCA object, it only plots it.
+But the PCA is computed on the top variable genes of the variance-stabilized matrix (vsd), so from there we can extract the information on the top variable genes that explain most of the variation for this database (loadings).
+```{r}
+# Extract the assay matrix from VSD
+mat_vsd <- SummarizedExperiment::assay(vsd)
+
+# Select the top variable genes
+library("genefilter")
+rv <- rowVars(mat_vsd)    # BiocManager::install("genefilter")
+select <- order(rv, decreasing = TRUE)[1:500]
+
+# Transpose and run PCA
+pca <- prcomp(t(mat_vsd[select, ]))
+
+# Inspect the PCA results
+## Variance explained by PCs
+summary(pca)
+
+# Visualize the variance explained (useful to see how many PCs matter)
+barplot( (pca$sdev^2 / sum(pca$sdev^2))[1:7],
+         main = "Variance explained by first 7 PCs",
+         xlab = "Principal component", ylab = "Proportion of variance" )
+
+## Loadings (genes contributing to PCs)
+loadings <- pca$rotation   # genes x PCs
+head(loadings[, 1:5])      # first 5 PCs
+```
+
+## Differential Expression analysis
+
+```{r}
+DEdss <- DESeq2::DESeq(dss)
+
+DEdss
+
+DESeq2::resultsNames(DEdss)
+```
+
+Check the reultsNames and choose one to extract the comparison: Group_Lung_WT_Case_vs_Lung_DKO_Case (Lung WT Case and Lung DKO Case).
+
+```{r}
+res_WT_Case_KO_Case <- DESeq2::results(DEdss, contrast = list("Group_Lung_WT_Case_vs_Lung_DKO_Case"))
+```
+
+To count how many are differentially expressed, check how many are not NA in the padj column and lower than the classic 0.05 threshold.
+p-adjusted is needed since for each gene we're making a statistical test, in DEseq we're making thousands of test on the same value by comparing it with the others which means that by chance it is possible to have a significant value by chance. So the adjustment takes in consideration the sample size.
+```{r}
+sum(! is.na(res_WT_Case_KO_Case$padj) & res_WT_Case_KO_Case$padj < 0.05)
+```
+
+Do the same comparing the group of WT control against WT case, and extract the results of differentially expressed genes into a dataframe.
+
+```{r}
+res_WT_Control_WT_Case <- DESeq2::results(DEdss, contrast = list("Group_Lung_WT_Case_vs_Lung_DKO_Case",
+                                                                 "Group_Lung_WT_Control_vs_Lung_DKO_Case"))
+
+df_WT_Control_WT_Case <- data.frame(res_WT_Control_WT_Case[res_WT_Control_WT_Case$padj < 0.05 & ! is.na(res_WT_Control_WT_Case$padj), ])
+
+dim(df_WT_Control_WT_Case)
+head(df_WT_Control_WT_Case)
+```
+
+#### Heatmap
+
+Produce a heatmap to visualize the differences in the expression along all the samples.
+
+```{r}
+# 1. Extract VSD matrix
+vsd_mat <- SummarizedExperiment::assay(vsd)
+
+# 2. Select significant genes
+res <- DESeq2::results(DEdss)
+sig <- rownames(res)[which(res$padj < 0.05)]
+heat_mat <- vsd_mat[sig, ]
+
+# 3. Build annotation
+ann <- sample_info[, "Group", drop = FALSE]
+rownames(ann) <- sample_info$Sample
+ann <- ann[colnames(heat_mat), , drop = FALSE]
+
+
+# 4. Plot heatmap
+library(pheatmap)
+pheatmap(heat_mat,
+         annotation_col = ann,
+         show_rownames = FALSE,
+         fontsize_col = 10,
+         clustering_distance_rows = "euclidean",
+         clustering_distance_cols = "euclidean",
+         clustering_method = "complete",
+         scale = "row")
+```
+
+
+
+### Volcano plot
+
+
+```{r}
+# install.packages("devtools")
+# devtools::install_github("kevinblighe/EnhancedVolcano")
+library("EnhancedVolcano")
+library("ggrepel")
+
+EnhancedVolcano(res,
+    lab = rownames(res),
+    x = 'log2FoldChange',
+    y = 'pvalue')
+```
+
+
+How many genes are differentially expressed (DE) in the pairwise comparison you selected (e.g. padj < 0.05)?
+```{r}
+paste0("There has been found ", length(sig), " DE genes in total.")
+
+## WT Case against WT Control
+res_WT_Control_WT_Case <- DESeq2::results(DEdss, contrast = list("Group_Lung_WT_Case_vs_Lung_DKO_Case",
+                                                                 "Group_Lung_WT_Control_vs_Lung_DKO_Case"))
+
+DE_WT_Control_vs_Case <- res_WT_Control_WT_Case[which(res_WT_Control_WT_Case$padj < 0.05 & !is.na(res_WT_Control_WT_Case$padj)), ]
+
+paste0("The number of DE comparing WT control and cases is ", nrow(DE_WT_Control_vs_Case))
+```
+How many of the DE genes are up-regulated vs down-regulated?
+```{r}
+paste0("The number of DE upregulated for WT controls compared to cases are ", sum(DE_WT_Control_vs_Case$log2FoldChange > 0), " and ", length(DE_WT_Control_vs_Case$log2FoldChange) - sum(DE_WT_Control_vs_Case$log2FoldChange > 0), " downregulated.")
+
+```
+
+Based on the original publication, select 2-3 genes that are of particular interest and investigate their expression level. You could use, for example, the normalised counts (see DESeq2::counts) where the effect of between-sample differences in sequencing depth has been removed.
+
+
+
+
+
+### step 8
+
+Use the box plot to visualize fold change and significance (p-value) for the few selected genes for my report.
+
+
+Hypergeometric test to check overrepresentation
+
+Overrepresentation has many different names
+
+The databases for overrepresentation test where you can get the pathway categorization are:
+- GO
+- KEGG
+- Reactome
+- Wikipaths
+
+
+
+
+
+
+
+
