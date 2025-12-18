@@ -134,33 +134,28 @@ _Documentation_
 
 
 ## 4. Exploratory data analysis
-do heat map and other stuff
+Do DESeq2 and get a general overview of the data composition with PCAs after normalizing the variation.
 
 
+## 5. Differential expression analysis
+Choose interesting comparisons (WT contr v cases, DKO contr v cases)
 
+In order to do so extract the pairwise comparison results using `DESeq::results()` analyse them and plot them with heatmap or volcano plot.
 
+Checking adjusted p-value and logFC allows us to find the most relevant DE genes and understand how much they are under/over-expressed. The plots helps us visualize them (useful for the report).
 
-?? what file did i need to unzip? The reference genome?, for sure not the fastq files of the samples
+- Heatmap
+- Vulcano plot
+Choose one to use for the report
 
+## Important knowledge
 
-
-Goal:
-find level of expression and differentially expressed genes
-
-step 4
-do heat map
-
-which are the genes that change with the condition -> fantasize but have a narrative
-
-Fold Chagne (FC) is the ratio between the mean of the observations per condition, in the DESeq2 we get the logFC because it centers the values around 0:
+#### Fold Change (FC) 
+Is the ratio between the mean of the observations per condition, in the DESeq2 we get the logFC because it centers the values around 0:
 when larger than 0 the expession is higher in one condition than the other (FC), usually control is denominator so you compare everything to the 0 which is control
 
-e.g., logFC = -12 allora the condition expresses that gene much less than the control.
+e.g., logFC = -12 then the condition 1 expresses that gene much less than the condition 2.
 
-
-p-adjusted
+#### p-adjusted
 every time we have a gene we're making a statistical test, in DEseq we're making thousands of test on the same value which means that by chance it is possible to have 
 
-
-
-Vulcano plot

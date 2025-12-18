@@ -1,5 +1,5 @@
 ---
-title: "DE analysis"
+title: "DEshort"
 output: html_document
 ---
 
@@ -72,34 +72,6 @@ DESeq2::plotPCA(vsd, intgroup = "Group")
 ```
 
 
-DESeq2::plotPCA() does NOT return the PCA object, it only plots it.
-But the PCA is computed on the top variable genes of the variance-stabilized matrix (vsd), so from there we can extract the information on the top variable genes that explain most of the variation for this database (loadings).
-```{r}
-# Extract the assay matrix from VSD
-mat_vsd <- SummarizedExperiment::assay(vsd)
-
-# Select the top variable genes
-library("genefilter")
-rv <- rowVars(mat_vsd)    # BiocManager::install("genefilter")
-select <- order(rv, decreasing = TRUE)[1:500]
-
-# Transpose and run PCA
-pca <- prcomp(t(mat_vsd[select, ]))
-
-# Inspect the PCA results
-## Variance explained by PCs
-summary(pca)
-
-# Visualize the variance explained (useful to see how many PCs matter)
-barplot( (pca$sdev^2 / sum(pca$sdev^2))[1:7],
-         main = "Variance explained by first 7 PCs",
-         xlab = "Principal component", ylab = "Proportion of variance" )
-
-## Loadings (genes contributing to PCs)
-loadings <- pca$rotation   # genes x PCs
-head(loadings[, 1:5])      # first 5 PCs
-```
-
 ## 6. Differential Expression analysis
 
 ```{r}
@@ -120,51 +92,51 @@ Check the number of differentially expressed genes in each comparison with *padj
 
 ```{r}
 # res_WT_Case_KO_Case <- DESeq2::results(dss, contrast = list("Group_Lung_WT_Case_vs_Lung_DKO_Case"))   SAME AS:
-res_WT_Case_KO_Case <- DESeq2::results(dss, contrast = c("Group", "Lung_WT_Case", "Lung_DKO_Case"))
+res_WT_Case_KO_Case <- DESeq2::results(dss, contrast = c("Group", "Lung_WT_Case", "Lung_DKO_Case")) # extract comparison
 
-WT_Case_KO_Case <- res_WT_Case_KO_Case[res_WT_Case_KO_Case$padj < 0.05 & ! is.na(res_WT_Case_KO_Case$padj), ]
+WT_Case_KO_Case <- res_WT_Case_KO_Case[res_WT_Case_KO_Case$padj < 0.05 & ! is.na(res_WT_Case_KO_Case$padj), ] # filter for padj
 
-sort_WT_KO_case <- WT_Case_KO_Case[order(WT_Case_KO_Case$padj), ]
+sort_WT_KO_case <- WT_Case_KO_Case[order(WT_Case_KO_Case$padj), ] # order genes per lower padj
 
-nrow(sort_WT_KO_case)
-head(sort_WT_KO_case)
+nrow(sort_WT_KO_case) # number of DE genes in this comparison
+# head(sort_WT_KO_case) # fist 10 DE genes in this comparison
 
 ```
 
 - **WT control vs WT case**
 ```{r}
-res_WT_Control_WT_Case <- DESeq2::results(dss, contrast = c("Group", "Lung_WT_Case", "Lung_WT_Control"))
+res_WT_Control_WT_Case <- DESeq2::results(dss, contrast = c("Group", "Lung_WT_Case", "Lung_WT_Control")) # extract comparison
 
-WT_Control_WT_Case <- res_WT_Control_WT_Case[res_WT_Control_WT_Case$padj < 0.05 & ! is.na(res_WT_Control_WT_Case$padj), ]
+WT_Control_WT_Case <- res_WT_Control_WT_Case[res_WT_Control_WT_Case$padj < 0.05 & ! is.na(res_WT_Control_WT_Case$padj), ] # filter for padj
 
-sort_WT <- WT_Control_WT_Case[order(WT_Control_WT_Case$padj), ]
+sort_WT <- WT_Control_WT_Case[order(WT_Control_WT_Case$padj), ] # order genes per lower padj
 
-nrow(sort_WT)
-head(sort_WT)
+nrow(sort_WT) # number of DE genes in this comparison
+# head(sort_WT) # fist 10 DE genes in this comparison
 ```
 
 - **WT control vs DKO control**
 ```{r}
-res_WT_Control_DKO_Control <- DESeq2::results(dss, contrast = c("Group", "Lung_WT_Control", "Lung_DKO_Control"))
+res_WT_Control_DKO_Control <- DESeq2::results(dss, contrast = c("Group", "Lung_WT_Control", "Lung_DKO_Control")) # extract comparison
 
-WT_Control_DKO_Control <- res_WT_Control_DKO_Control[res_WT_Control_DKO_Control$padj < 0.05 & ! is.na(res_WT_Control_DKO_Control$padj), ]
+WT_Control_DKO_Control <- res_WT_Control_DKO_Control[res_WT_Control_DKO_Control$padj < 0.05 & ! is.na(res_WT_Control_DKO_Control$padj), ] # filter for padj
 
-sort_WT_DKO_d <- WT_Control_DKO_Control[order(WT_Control_DKO_Control$padj), ]
+sort_WT_DKO_d <- WT_Control_DKO_Control[order(WT_Control_DKO_Control$padj), ] # order genes per lower padj
 
-nrow(sort_WT_DKO_d)
-head(sort_WT_DKO_d)
+nrow(sort_WT_DKO_d) # number of DE genes in this comparison
+# head(sort_WT_DKO_d) # fist 10 DE genes in this comparison
 ```
 
 - **DKO case vs DKO control**
 ```{r}
-res_DKO_Control_DKO_Case <- DESeq2::results(dss, contrast = c("Group", "Lung_DKO_Control", "Lung_DKO_Case"))
+res_DKO_Control_DKO_Case <- DESeq2::results(dss, contrast = c("Group", "Lung_DKO_Control", "Lung_DKO_Case")) # extract comparison
 
-DKO_Control_DKO_Case <- res_DKO_Control_DKO_Case[res_DKO_Control_DKO_Case$padj < 0.05 & ! is.na(res_DKO_Control_DKO_Case$padj), ]
+DKO_Control_DKO_Case <- res_DKO_Control_DKO_Case[res_DKO_Control_DKO_Case$padj < 0.05 & ! is.na(res_DKO_Control_DKO_Case$padj), ] # filter for padj
 
-sort_DKO <- DKO_Control_DKO_Case[order(DKO_Control_DKO_Case$padj), ]
+sort_DKO <- DKO_Control_DKO_Case[order(DKO_Control_DKO_Case$padj), ] # order genes per lower padj
 
-dim(sort_DKO)
-head(sort_DKO)
+dim(sort_DKO) # number of DE genes in this comparison
+# head(sort_DKO) # fist 10 DE genes in this comparison
 ```
 
 
