@@ -141,7 +141,7 @@ dim(sort_DKO) # number of DE genes in this comparison
 
 
 ### Heatmap
-
+**Change the heatmap for each of the comparison you want to check**
 Produce a heatmap to visualize the differences in the expression along all the samples.
 
 ```{r}
