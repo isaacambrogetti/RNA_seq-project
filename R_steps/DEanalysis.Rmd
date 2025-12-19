@@ -296,6 +296,21 @@ EnhancedVolcano(filt_Case,
     lab = rownames(filt_Case),
     x = 'log2FoldChange',
     y = 'pvalue')
+
+EnhancedVolcano(filt_Control,
+    lab = rownames(filt_Control),
+    x = 'log2FoldChange',
+    y = 'pvalue')
+
+EnhancedVolcano(filt_DKO,
+    lab = rownames(filt_DKO),
+    x = 'log2FoldChange',
+    y = 'pvalue')
+
+EnhancedVolcano(filt_WT,
+    lab = rownames(filt_WT),
+    x = 'log2FoldChange',
+    y = 'pvalue')
 ```
 
 
@@ -390,12 +405,10 @@ if (!require("org.Mm.eg.db", quietly = TRUE))
 
 Call enrichGO
 ```{r}
-# Select significant genes WT control and casees
-sig <- rownames(res_WT_Control_WT_Case)[which(res_WT_Control_WT_Case$padj < 0.05)]
-
+# Select significant genes WT control and cases and run the enrichment via Gene Ontology
 ego <- clusterProfiler::enrichGO(
-  gene = sig, 
-  universe = rownames(mat),
+  gene = rownames(WT_Control_WT_Case), 
+  universe = rownames(dss),
   OrgDb = org.Mm.eg.db,
   ont = "BP",
   keyType = "ENSEMBL",
@@ -404,9 +417,9 @@ ego <- clusterProfiler::enrichGO(
   )
 ```
 
-- *gene = sig*
+- *gene = rownames(<results>)*
   
-  sig should be a vector of ENSEMBL gene IDs that are significantly DE.
+  should be a vector of ENSEMBL gene IDs that are significantly DE.
   
 - *universe = rownames(mat)*
 
@@ -429,6 +442,7 @@ ego <- clusterProfiler::enrichGO(
 
 - *maxGSSize = 150*
   maximal size of genes annotated for testing
+
 
 
 Work on the results of enrichGO

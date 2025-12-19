@@ -295,7 +295,7 @@ sig <- rownames(res_WT_Control_WT_Case)[which(res_WT_Control_WT_Case$padj < 0.05
 
 ego <- clusterProfiler::enrichGO(
   gene = sig, 
-  universe = rownames(mat),
+  universe = rownames(dss),
   OrgDb = org.Mm.eg.db,
   ont = "BP",
   keyType = "ENSEMBL",
