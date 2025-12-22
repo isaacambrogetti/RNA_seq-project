@@ -292,8 +292,8 @@ pheatmap(heat,
 library("EnhancedVolcano")
 library("ggrepel")
 
-EnhancedVolcano(filt_Case,
-    lab = rownames(filt_Case),
+EnhancedVolcano(filt_DKO,
+    lab = rownames(filt_DKO),
     x = 'log2FoldChange',
     y = 'pvalue')
 
@@ -302,13 +302,13 @@ EnhancedVolcano(filt_Control,
     x = 'log2FoldChange',
     y = 'pvalue')
 
-EnhancedVolcano(filt_DKO,
-    lab = rownames(filt_DKO),
+EnhancedVolcano(filt_WT,
+    lab = rownames(filt_WT),
     x = 'log2FoldChange',
     y = 'pvalue')
 
-EnhancedVolcano(filt_WT,
-    lab = rownames(filt_WT),
+EnhancedVolcano(filt_Case,
+    lab = rownames(filt_Case),
     x = 'log2FoldChange',
     y = 'pvalue')
 ```
@@ -318,36 +318,92 @@ EnhancedVolcano(filt_WT,
 
 How many genes are differentially expressed (DE) in the pairwise comparison you selected (e.g. padj < 0.05)? 
 ```{r}
-paste0("There has been found ", nrow(WT_Control_WT_Case), " DE genes in WT control vs case comparison having padj < 0.05.")
-
-paste0("There has been found ", nrow(WT_Case_DKO_Case), " DE genes in WT vs DKO case comparison having padj < 0.05.")
+paste0("There has been found ", nrow(DKO_Control_DKO_Case), " DE genes in DKO control vs case comparison having padj < 0.05.")
 
 paste0("There has been found ", nrow(WT_Control_DKO_Control), " DE genes in WT vs DKO control comparison having padj < 0.05.")
 
-paste0("There has been found ", nrow(DKO_Control_DKO_Case), " DE genes in DKO control vs case comparison having padj < 0.05.")
+paste0("There has been found ", nrow(WT_Control_WT_Case), " DE genes in WT control vs case comparison having padj < 0.05.")
+
+paste0("There has been found ", nrow(WT_Case_DKO_Case), " DE genes in WT vs DKO case comparison having padj < 0.05.")
 ```
 How many of the DE genes are up-regulated vs down-regulated meaningfully (padj < 0.05)?
 ```{r}
-paste0("For WT controls vs cases are ", sum(WT_Control_WT_Case$log2FoldChange > 0), " upregulated and ", length(WT_Control_WT_Case$log2FoldChange) - sum(WT_Control_WT_Case$log2FoldChange > 0), " downregulated.")
-
-paste0("For WT vs DKO case are ", sum(WT_Case_DKO_Case$log2FoldChange > 0), " upregulated and ", length(WT_Case_DKO_Case$log2FoldChange) - sum(WT_Case_DKO_Case$log2FoldChange > 0), " downregulated.")
+paste0("For DKO control vs case are ", sum(DKO_Control_DKO_Case$log2FoldChange > 0), " upregulated and ", length(DKO_Control_DKO_Case$log2FoldChange) - sum(DKO_Control_DKO_Case$log2FoldChange > 0), " downregulated.")
 
 paste0("For WT vs DKO control are ", sum(WT_Control_DKO_Control$log2FoldChange > 0), " upregulated and ", length(WT_Control_DKO_Control$log2FoldChange) - sum(WT_Control_DKO_Control$log2FoldChange > 0), " downregulated.")
 
-paste0("For DKO control vs case are ", sum(DKO_Control_DKO_Case$log2FoldChange > 0), " upregulated and ", length(DKO_Control_DKO_Case$log2FoldChange) - sum(DKO_Control_DKO_Case$log2FoldChange > 0), " downregulated.")
+paste0("For WT controls vs cases are ", sum(WT_Control_WT_Case$log2FoldChange > 0), " upregulated and ", length(WT_Control_WT_Case$log2FoldChange) - sum(WT_Control_WT_Case$log2FoldChange > 0), " downregulated.")
+
+paste0("For WT vs DKO case are ", sum(WT_Case_DKO_Case$log2FoldChange > 0), " upregulated and ", length(WT_Case_DKO_Case$log2FoldChange) - sum(WT_Case_DKO_Case$log2FoldChange > 0), " downregulated.")
 ```
 
 Based on the original publication, select 2-3 genes that are of particular interest and investigate their expression level. You could use, for example, the normalized counts (see DESeq2::counts) where the effect of between-sample differences in sequencing depth has been removed.
 
 
+Use the box plot to visualize fold change and significance (adj p-value) for the few selected genes for my report.
+
+How to find genes:
+
+ - read paper (see ToDo.md)
+ - find ensemble code
+ - look for the gene in the comparison of interest and extract info
+ - box plot with the info
+
+### genes from paper
+Install database
+```{r, message=FALSE, warning=FALSE}
+if (!require("org.Mm.eg.db", quietly = TRUE))
+  BiocManager::install("org.Mm.eg.db")
+
+library(org.Mm.eg.db)
+library(AnnotationDbi)
+```
+**Control vs Cases**
+```{r}
+gfilter <- function(symbols, dss){
+  ens_ids <- mapIds(
+    org.Mm.eg.db,
+    keys      = symbols,
+    column    = "ENSEMBL",
+    keytype   = "SYMBOL",
+    multiVals = "first"
+  )
+  
+  dss_fil <- dss[grepl(paste(unname(ens_ids), collapse="|"), row.names(dss), ignore.case = TRUE), ]
+  
+  # add gene name to the data frame
+  gene_map_one <- data.frame(
+    ENSEMBL = unname(ens_ids),
+    name    = names(ens_ids),
+    stringsAsFactors = FALSE
+  )
+
+  dss_fil$name <- gene_map_one$name[match(rownames(dss_fil), gene_map_one$ENSEMBL)]
+  
+  return(dss_fil)
+}
+
+# list of gene names to convert into ENSEMBLE codes
+## L5 (type I IFN)
+symbols <- c(
+  "Ifnb1", "Ifit1", "Ifit3", "Oas1a", "Oas2", "Oas3", "Oasl1", "Oasl2", "Mx1", "Stat2", "Irf7", "Irf9"
+)
+
+DKO_typeI <- gfilter(symbols, DKO_Control_DKO_Case)
+WT_typeI <- gfilter(symbols, WT_Control_WT_Case)
+Case_typeI <- gfilter(symbols, WT_Case_DKO_Case)
 
 
+## L7 (type II IFN)
+symbols <- c(
+  "Ifng", "Irf1", "Irf2", "Irf8", "Il12rb1", "Il12rb2", "Tap1", "Tap2", "Gbp2", "Gbp3", "Gbp4", "Gbp5", "Gbp6", "Gbp8", "Gbp9", "Gbp10", "Gbp11"
+)
 
 
-
-
-
-
+DKO_typeII <- gfilter(symbols, DKO_Control_DKO_Case)
+WT_typeII <- gfilter(symbols, WT_Control_WT_Case)
+Case_typeII <- gfilter(symbols, WT_Case_DKO_Case)
+```
 
 
 
@@ -366,8 +422,6 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## 7. Overrepresentation analysis
 
-Use the box plot to visualize fold change and significance (adj p-value) for the few selected genes for my report.
-
 
 **Hypergeometric test** to check overrepresentation
 
@@ -378,7 +432,7 @@ The databases for overrepresentation test where you can get the pathway categori
 - Reactome
 - Wikipaths
 
-I would use GO and KEGG (more curated? check why don't go randomly)
+I would use GO and KEGG (more curated? justify the choice)
 
 
 Install clusterProfiler
@@ -406,8 +460,28 @@ if (!require("org.Mm.eg.db", quietly = TRUE))
 Call enrichGO
 ```{r}
 # Select significant genes WT control and cases and run the enrichment via Gene Ontology
-ego <- clusterProfiler::enrichGO(
+ego_WT <- clusterProfiler::enrichGO(
   gene = rownames(WT_Control_WT_Case), 
+  universe = rownames(dss),
+  OrgDb = org.Mm.eg.db,
+  ont = "BP",
+  keyType = "ENSEMBL",
+  maxGSSize = 150,
+  pvalueCutoff = 0.05
+  )
+
+ego_DKO <- clusterProfiler::enrichGO(
+  gene = rownames(DKO_Control_DKO_Case), 
+  universe = rownames(dss),
+  OrgDb = org.Mm.eg.db,
+  ont = "BP",
+  keyType = "ENSEMBL",
+  maxGSSize = 150,
+  pvalueCutoff = 0.05
+  )
+
+ego_Case <- clusterProfiler::enrichGO(
+  gene = rownames(WT_Case_DKO_Case), 
   universe = rownames(dss),
   OrgDb = org.Mm.eg.db,
   ont = "BP",
@@ -447,48 +521,65 @@ ego <- clusterProfiler::enrichGO(
 
 Work on the results of enrichGO
 ```{r}
-dotplot(ego)
+library(ggplot2)
+
+dotplot(ego_WT, showCategory = 6, title = "WT control vs case") + theme(axis.text.y = element_text(size = 9)) + coord_cartesian(xlim = c(0.008, 0.016))
+dotplot(ego_DKO, showCategory = 6, title="DKO control vs case") + theme(axis.text.y = element_text(size = 10)) + coord_cartesian(xlim = c(0.008, 0.016))
+dotplot(ego_Case, showCategory = 6, title="WT vs DKO case") + theme(axis.text.y = element_text(size = 10)) + coord_cartesian(xlim = c(0.008, 0.016))
 ```
+
+
+
+
+
+
+
+## Check if BP from overrepresentation analysis make sense
+
+I want to use the genes that I know to be part of the biological processes (from the paper) and look for their BP. Once I have the BP I can 
+compare them with the results of the analysis to see if they are present or not.
+
+1. Retrieve GO BP annotations for known genes belonging to type I and type II IFN
 
 ```{r}
-dfego <- ego[grepl("interferon|ifn|ifit|oas", ego$Description, ignore.case=TRUE), ]
+# function to retrieve the GO BP annotations
+get_BP <- function(genes){
+  go <- AnnotationDbi::select(
+    org.Mm.eg.db,
+    keys = genes,
+    keytype = "ENSEMBL",
+    columns = c("GO", "ONTOLOGY")
+  )
 
-# find myeloid / granulocytes
-mye_idx <- grepl("myeloid|granulocyte|neutrophil|il-1|interleukin-1|il-17|interleukin-17|immunoglobulin|antibody|cytotox|nk cell|natural killer", 
-             ego$Description, ignore.case=TRUE)
+  go_bp <- go[go$ONTOLOGY == "BP", ] # filter for BP term only
+  
+  library(GO.db)
+  go_bp$Description <- Term(go_bp$GO) # get the description referring to the GO code
+  uniq <- unique(go_bp$Description) # choose only the unique ones
+  uniq <- uniq[!is.na(uniq)] # drop na
+  
+  return(uniq)
+}
+
+BP_one <- get_BP(rownames(Case_typeI)) # use the ENSEMBL code of the genes
+
+BP_two <- get_BP(rownames(Case_typeII))
 ```
-
 
 
 ```{r}
-ego_df <- as.data.frame(ego)
+keywords <- append(BP_one, BP_two)
 
-keywords <- c(
-  "granulocyte", "myeloid", "neutrophil",
-  "immunoglobulin", "antibody", "cytotoxic", 
-  "nk cell", "natural killer"
-)
+ego_plot <- function(ego, keywords, name){
+  ego_fil <- ego
+  
+  # filter for keywords of type I and type II TFN present in the enrichment of the comparison chosen
+  ego_fil@result <- ego@result[ego@result$Description %in% keywords, ]
+  
+  dotplot(ego_fil, showCategory = 10, title = name) + theme(axis.text.y = element_text(size = 9)) + coord_cartesian(xlim = c(0.002, 0.013))
+}
 
-immune_ids <- ego_df[grepl(paste(keywords, collapse="|"), ego_df$Description, ignore.case = TRUE), ]
-
-ego_immune <- ego
-ego_immune@result <- ego@result[ego@result$ID %in% immune_ids$ID, ]
-
-dotplot(ego_immune, showCategory = 20)
+ego_plot(ego_WT, keywords, "WT controls vs cases")
+ego_plot(ego_DKO, keywords, "DKO controls vs cases")
+ego_plot(ego_Case, keywords, "WT vs DKO cases")
 ```
-
-
-
-
-
-
-
-```
-custom_sets <- list(
-  Granulocyte = c("Ly6g","S100a8","S100a9","Mpo"),
-  NK_cells    = c("Nkg7","Gzmb","Prf1"),
-  Immunoglobulin = c("Ighm","Ighg1","Igkc","Iglc1")
-)
-```
-
-

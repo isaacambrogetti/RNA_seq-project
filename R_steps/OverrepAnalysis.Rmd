@@ -129,10 +129,24 @@ dotplot(ego_immune, showCategory = 20)
 
 
 
-```
-custom_sets <- list(
-  Granulocyte = c("Ly6g","S100a8","S100a9","Mpo"),
-  NK_cells    = c("Nkg7","Gzmb","Prf1"),
-  Immunoglobulin = c("Ighm","Ighg1","Igkc","Iglc1")
-)
+
+
+
+
+
+```{r}
+keywords <- append(BP_one, BP_two)
+
+ego_plot <- function(ego, keywords, name){
+  ego_fil <- ego
+  
+  # filter for keywords of type I and type II TFN present in the enrichment of the comparison chosen
+  ego_fil@result <- ego@result[ego@result$Description %in% keywords, ]
+  
+  dotplot(ego_fil, showCategory = 10, title = name) + theme(axis.text.y = element_text(size = 9)) + coord_cartesian(xlim = c(0.005, 0.013))
+}
+
+ego_plot(ego_WT, keywords, "WT controls vs cases")
+ego_plot(ego_DKO, keywords, "DKO controls vs cases")
+ego_plot(ego_Case, keywords, "WT vs DKO cases")
 ```
