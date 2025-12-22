@@ -68,6 +68,7 @@ vsd <- DESeq2::vst(dds, blind = TRUE)
 plot the PCA to check whether it is all right with the data and it is possible to distinguish in the 4 clusters where they belong to.
 
 ```{r}
+# PCA using top 500 features by variance
 DESeq2::plotPCA(vsd, intgroup = "Group")
 ```
 
@@ -91,151 +92,133 @@ Check the number of differentially expressed genes in each comparison with *padj
 - **WT case and DKO case**
 
 ```{r}
-# res_WT_Case_KO_Case <- DESeq2::results(dss, contrast = list("Group_Lung_WT_Case_vs_Lung_DKO_Case"))   SAME AS:
-res_WT_Case_KO_Case <- DESeq2::results(dss, contrast = c("Group", "Lung_WT_Case", "Lung_DKO_Case")) # extract comparison
+get_results <- function(DEout, this, to_that){
+  res_comp <- DESeq2::results(DEout, contrast = c("Group", this, to_that)) # extract comparison
+  
+  filt_comp <- res_comp[res_comp$padj < 0.05 & ! is.na(res_comp$padj), ] # filter for padj
+  
+  return(filt_comp)
+}
 
-WT_Case_KO_Case <- res_WT_Case_KO_Case[res_WT_Case_KO_Case$padj < 0.05 & ! is.na(res_WT_Case_KO_Case$padj), ] # filter for padj
-
-sort_WT_KO_case <- WT_Case_KO_Case[order(WT_Case_KO_Case$padj), ] # order genes per lower padj
-
-nrow(sort_WT_KO_case) # number of DE genes in this comparison
-# head(sort_WT_KO_case) # fist 10 DE genes in this comparison
-
-```
-
-- **WT control vs WT case**
-```{r}
-res_WT_Control_WT_Case <- DESeq2::results(dss, contrast = c("Group", "Lung_WT_Case", "Lung_WT_Control")) # extract comparison
-
-WT_Control_WT_Case <- res_WT_Control_WT_Case[res_WT_Control_WT_Case$padj < 0.05 & ! is.na(res_WT_Control_WT_Case$padj), ] # filter for padj
-
-sort_WT <- WT_Control_WT_Case[order(WT_Control_WT_Case$padj), ] # order genes per lower padj
-
-nrow(sort_WT) # number of DE genes in this comparison
-# head(sort_WT) # fist 10 DE genes in this comparison
-```
-
-- **WT control vs DKO control**
-```{r}
-res_WT_Control_DKO_Control <- DESeq2::results(dss, contrast = c("Group", "Lung_WT_Control", "Lung_DKO_Control")) # extract comparison
-
-WT_Control_DKO_Control <- res_WT_Control_DKO_Control[res_WT_Control_DKO_Control$padj < 0.05 & ! is.na(res_WT_Control_DKO_Control$padj), ] # filter for padj
-
-sort_WT_DKO_d <- WT_Control_DKO_Control[order(WT_Control_DKO_Control$padj), ] # order genes per lower padj
-
-nrow(sort_WT_DKO_d) # number of DE genes in this comparison
-# head(sort_WT_DKO_d) # fist 10 DE genes in this comparison
-```
-
-- **DKO case vs DKO control**
-```{r}
-res_DKO_Control_DKO_Case <- DESeq2::results(dss, contrast = c("Group", "Lung_DKO_Control", "Lung_DKO_Case")) # extract comparison
-
-DKO_Control_DKO_Case <- res_DKO_Control_DKO_Case[res_DKO_Control_DKO_Case$padj < 0.05 & ! is.na(res_DKO_Control_DKO_Case$padj), ] # filter for padj
-
-sort_DKO <- DKO_Control_DKO_Case[order(DKO_Control_DKO_Case$padj), ] # order genes per lower padj
-
-dim(sort_DKO) # number of DE genes in this comparison
-# head(sort_DKO) # fist 10 DE genes in this comparison
+WT_Case_KO_Case <- get_results(dss, "Lung_WT_Case", "Lung_DKO_Case")
+WT_Control_WT_Case <- get_results(dss, "Lung_WT_Control", "Lung_WT_Case") # WT control vs WT case
+DKO_Control_DKO_Case <- get_results(dss, "Lung_DKO_Control", "Lung_DKO_Case")
 ```
 
 
 ### Heatmap
-**Change the heatmap for each of the comparison you want to check**
-Produce a heatmap to visualize the differences in the expression along all the samples.
+Produce heatmaps to visualize the differences in the expression between groups.
 
 ```{r}
 # 1. Extract VSD matrix
 vsd_mat <- SummarizedExperiment::assay(vsd)
 
-# 2. Select significant genes
-res <- DESeq2::results(dss)
-sig <- rownames(res)[which(res$padj < 0.05)] # sig padj < 0.05
-sig_fc <- rownames(res)[which(res$padj < 0.05 & (res$log2FoldChange > 3 | res$log2FoldChange < -3))] # filter for FC
-heat_mat <- vsd_mat[sig[1:100], ] # filtering for padj only
-heat_mat_fc <- vsd_mat[sig_fc[1:100], ] # filtering for FC too
+heatplot <- function(comparison, samples, vsd, title, leg = TRUE){
+  # 2. Select significant genes for the comparison
+  filtered <- comparison[(comparison$log2FoldChange > 1 | comparison$log2FoldChange < -1), ]
+  filtered <- filtered[order(filtered$padj),]
+  filtered <- filtered[1:25,]
+  heat_matrix <- vsd[rownames(filtered),]
+  
+  # 3. Build annotation for the comparison
+  ann <- samples[, "Group", drop = FALSE]
+  rownames(ann) <- samples$Sample
+  ann <- ann[colnames(heat_matrix), , drop = FALSE]
+  
+  # 4. Plot heatmap
+  library(pheatmap)
+  pheatmap(heat_matrix,
+           annotation_col = ann,
+           show_rownames = TRUE,
+           fontsize_col = 10,
+           clustering_distance_rows = "euclidean",
+           clustering_distance_cols = "euclidean",
+           clustering_method = "complete",
+           scale = "row",
+           main = title,
+           annotation_legend = leg,
+           show_colnames = FALSE)
+}
 
-# 3. Build annotation
-ann <- sample_info[, "Group", drop = FALSE]
-rownames(ann) <- sample_info$Sample
-ann <- ann[colnames(heat_mat), , drop = FALSE]
-
-
-# 4. Plot heatmap
-library(pheatmap)
-  # padj filtering only
-pheatmap(heat_mat,
-         annotation_col = ann,
-         show_rownames = FALSE,
-         fontsize_col = 10,
-         clustering_distance_rows = "euclidean",
-         clustering_distance_cols = "euclidean",
-         clustering_method = "complete",
-         scale = "row")
-  # FC filtering
-pheatmap(heat_mat_fc,
-         annotation_col = ann,
-         show_rownames = FALSE,
-         fontsize_col = 10,
-         clustering_distance_rows = "euclidean",
-         clustering_distance_cols = "euclidean",
-         clustering_method = "complete",
-         scale = "row")  # explain how scale = "row" or "column"
+heatplot(WT_Case_DKO_Case, sample_info, vsd_mat, title = "WT vs DKO cases")
+heatplot(WT_Control_WT_Case, sample_info, vsd_mat, title = "WT controls vs cases")
+heatplot(DKO_Control_DKO_Case, sample_info, vsd_mat, title = "DKO controls vs cases")
 ```
 
 
+**SUMMARY REPORT TABLE 1**
 
-### Volcano plot
-
-
+How many genes are differentially expressed (DE) in the pairwise comparisons you selected (e.g. padj < 0.05)? 
 ```{r}
-# install.packages("devtools")
-# devtools::install_github("kevinblighe/EnhancedVolcano")
-library("EnhancedVolcano")
-library("ggrepel")
-
-EnhancedVolcano(res,
-    lab = rownames(res),
-    x = 'log2FoldChange',
-    y = 'pvalue')
+paste0("There has been found ", nrow(WT_Case_DKO_Case), " DE genes in WT vs DKO case comparison having padj < 0.05.")
+paste0("There has been found ", nrow(WT_Control_WT_Case), " DE genes in WT control vs case comparison having padj < 0.05.")
+paste0("There has been found ", nrow(DKO_Control_DKO_Case), " DE genes in DKO control vs case comparison having padj < 0.05.")
 ```
-
-
-How many genes are differentially expressed (DE) in the pairwise comparison you selected (e.g. padj < 0.05)?
+How many of the DE genes are up-regulated vs down-regulated meaningfully (padj < 0.05)?
 ```{r}
-paste0("There has been found ", length(sig), " DE genes in total.")
-
-## WT Case against WT Control
-res_WT_Control_WT_Case <- DESeq2::results(dss, contrast = list("Group_Lung_WT_Case_vs_Lung_DKO_Case",
-                                                                 "Group_Lung_WT_Control_vs_Lung_DKO_Case"))
-
-DE_WT_Control_vs_Case <- res_WT_Control_WT_Case[which(res_WT_Control_WT_Case$padj < 0.05 & !is.na(res_WT_Control_WT_Case$padj)), ]
-
-paste0("The number of DE genes comparing WT control and cases is ", nrow(DE_WT_Control_vs_Case))
-```
-How many of the DE genes are up-regulated vs down-regulated?
-```{r}
-paste0("The number of DE genes upregulated for WT controls compared to cases are ", sum(DE_WT_Control_vs_Case$log2FoldChange > 0), " and ", length(DE_WT_Control_vs_Case$log2FoldChange) - sum(DE_WT_Control_vs_Case$log2FoldChange > 0), " downregulated.")
-
-paste0("The number of DE genes having adjp < 0.05 and -1 < lFC < 1 is ", "FIND IT")
+paste0("For WT vs DKO case are ", sum(WT_Case_DKO_Case$log2FoldChange > 1), " upregulated and ", length(WT_Case_DKO_Case$log2FoldChange) - sum(WT_Case_DKO_Case$log2FoldChange > -1), " downregulated.")
+paste0("For WT controls vs cases are ", sum(WT_Control_WT_Case$log2FoldChange > 1), " upregulated and ", length(WT_Control_WT_Case$log2FoldChange) - sum(WT_Control_WT_Case$log2FoldChange > -1), " downregulated.")
+paste0("For DKO control vs case are ", sum(DKO_Control_DKO_Case$log2FoldChange > 1), " upregulated and ", length(DKO_Control_DKO_Case$log2FoldChange) - sum(DKO_Control_DKO_Case$log2FoldChange > -1), " downregulated.")
 ```
 
-Based on the original publication, select 2-3 genes that are of particular interest and investigate their expression level. You could use, for example, the normalized counts (see DESeq2::counts) where the effect of between-sample differences in sequencing depth has been removed.
+Based on the original publication, select 2-3 genes that are of particular interest and investigate their expression level. You could use, for example, the normalized counts (see DESeq2::counts) where the effect of between-sample differences in sequencing depth has been removed. make **SUMMARY REPORT TABLE 2** for the selected genes with name, ENSEMBL name, pathway, count.
+
+Use the box plot to visualize fold change and significance (adj p-value) for the few selected genes for my report.
+
+**genes from paper**
+
+```{r, message=FALSE, warning=FALSE}
+# Install database
+if (!require("org.Mm.eg.db", quietly = TRUE))
+  BiocManager::install("org.Mm.eg.db")
+
+library(org.Mm.eg.db)
+library(AnnotationDbi)
+
+# function to obtain ENSEMBL names from their name
+gfilter <- function(symbols, dss){
+  ens_ids <- mapIds(
+    org.Mm.eg.db,
+    keys      = symbols,
+    column    = "ENSEMBL",
+    keytype   = "SYMBOL",
+    multiVals = "first"
+  )
+  
+  dss_fil <- dss[grepl(paste(unname(ens_ids), collapse="|"), row.names(dss), ignore.case = TRUE), ]
+  
+  # add gene name to the data frame
+  gene_map_one <- data.frame(
+    ENSEMBL = unname(ens_ids),
+    name    = names(ens_ids),
+    stringsAsFactors = FALSE
+  )
+
+  dss_fil$name <- gene_map_one$name[match(rownames(dss_fil), gene_map_one$ENSEMBL)]
+  
+  return(dss_fil)
+}
+
+# list of gene names to convert into ENSEMBLE codes
+## L5 (type I IFN)
+symbols <- c(
+  "Ifnb1", "Ifit1", "Ifit3", "Oas1a", "Oas2", "Oas3", "Oasl1", "Oasl2", "Mx1", "Stat2", "Irf7", "Irf9"
+)
+
+Case_typeI <- gfilter(symbols, WT_Case_DKO_Case)
+WT_typeI <- gfilter(symbols, WT_Control_WT_Case)
+DKO_typeI <- gfilter(symbols, DKO_Control_DKO_Case)
 
 
+## L7 (type II IFN)
+symbols <- c(
+  "Ifng", "Irf1", "Irf2", "Irf8", "Il12rb1", "Il12rb2", "Tap1", "Tap2", "Gbp2", "Gbp3", "Gbp4", "Gbp5", "Gbp6", "Gbp8", "Gbp9", "Gbp10", "Gbp11"
+)
 
-I can do this process for as many comparisons as I want. I need to read the paper to decide what to choose.
-
-
-
-
-
-
-
-
-
-
-
+Case_typeII <- gfilter(symbols, WT_Case_DKO_Case)
+WT_typeII <- gfilter(symbols, WT_Control_WT_Case)
+DKO_typeII <- gfilter(symbols, DKO_Control_DKO_Case)
+```
 
 
 
@@ -250,8 +233,6 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ## 7. Overrepresentation analysis
-
-Use the box plot to visualize fold change and significance (adj p-value) for the few selected genes for my report.
 
 
 **Hypergeometric test** to check overrepresentation

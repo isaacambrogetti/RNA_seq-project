@@ -133,7 +133,7 @@ head(sort_WT_DKO_case)
 
 - **WT control vs WT case**
 ```{r}
-res_WT_Control_WT_Case <- DESeq2::results(dss, contrast = c("Group", "Lung_WT_Case", "Lung_WT_Control"))
+res_WT_Control_WT_Case <- DESeq2::results(dss, contrast = c("Group", "Lung_WT_Control", "Lung_WT_Case"))
 
 WT_Control_WT_Case <- res_WT_Control_WT_Case[res_WT_Control_WT_Case$padj < 0.05 & ! is.na(res_WT_Control_WT_Case$padj), ]
 
