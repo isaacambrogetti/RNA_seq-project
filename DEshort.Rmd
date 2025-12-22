@@ -161,9 +161,88 @@ paste0("For WT controls vs cases are ", sum(WT_Control_WT_Case$log2FoldChange > 
 paste0("For DKO control vs case are ", sum(DKO_Control_DKO_Case$log2FoldChange > 1), " upregulated and ", length(DKO_Control_DKO_Case$log2FoldChange) - sum(DKO_Control_DKO_Case$log2FoldChange > -1), " downregulated.")
 ```
 
-Based on the original publication, select 2-3 genes that are of particular interest and investigate their expression level. You could use, for example, the normalized counts (see DESeq2::counts) where the effect of between-sample differences in sequencing depth has been removed. make **SUMMARY REPORT TABLE 2** for the selected genes with name, ENSEMBL name, pathway, count.
+Based on the original publication, select 2-3 genes that are of particular interest and investigate their expression level. 
+make **SUMMARY REPORT TABLE 2** for the selected genes with name, ENSEMBL name, pathway, count.
 
-Use the box plot to visualize fold change and significance (adj p-value) for the few selected genes for my report.
+```{r}
+common <- rownames(WT_typeII)[which(! rownames(WT_typeII) %in% rownames(DKO_typeII))]
+
+WT_typeII[which(rownames(WT_typeII) == "ENSMUSG00000024339"),]
+```
+
+After comparing the DE genes in the three different comparisons, I choose four representative ones from different BP families that explain best what has been concluded in the paper.
+
+- Oas1a (type I) ENSMUSG00000052776
+  present in all three comparisons, so this gene function is related to the disease and not influenced by the DKO
+- Ifit1 (type I) ENSMUSG00000034459
+  not present in WT control and case, but not present in DKO case, so affected by DKO
+- Gbp5 (type II) ENSMUSG00000105504
+  ||
+- Irf1 (type II) ENSMUSG00000018899
+  ||
+
+Oas1a (type I) ENSMUSG00000052776
+Ifit1 (type I) ENSMUSG00000034459
+Gbp5 (type II) ENSMUSG00000105504
+Irf1 (type II) ENSMUSG00000018899
+
+take the vsd information on the corrected variance and plot those
+
+```{r, fig.width=8, fig.height=10}
+gene_annot <- data.frame(
+  Gene = c(
+    "ENSMUSG00000052776",
+    "ENSMUSG00000034459",
+    "ENSMUSG00000105504",
+    "ENSMUSG00000018899"
+  ),
+  Label = c(
+    "Oas1a (type I)\nENSMUSG00000052776",
+    "Ifit1 (type I)\nENSMUSG00000034459",
+    "Gbp5 (type II)\nENSMUSG00000105504",
+    "Irf1 (type II)\nENSMUSG00000018899"
+  )
+)
+
+library(dplyr)
+
+df_long <- df_long %>%
+  left_join(gene_annot, by = "Gene")
+
+comparisons <- list(
+  c("Lung_WT_Control", "Lung_WT_Case"),
+  c("Lung_DKO_Control", "Lung_DKO_Case"),
+  c("Lung_WT_Case", "Lung_DKO_Case")
+)
+
+library(ggplot2)
+library(ggpubr)
+
+ggplot(df_long, aes(x = Group, y = Expression, fill = Group)) +
+  geom_boxplot(outlier.shape = NA) +
+  geom_jitter(width = 0.15, size = 2) +
+
+  facet_wrap(~ Label, scales = "free_y") +
+
+  stat_compare_means(
+    comparisons = comparisons,
+    method = "wilcox.test",
+    label = "p.signif",
+    hide.ns = TRUE
+  ) +
+
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    strip.text = element_text(size = 10),
+    legend.position = "none"
+  ) +
+  labs(
+    title = "VST expression of selected interferon-related genes",
+    y = "VST expression",
+    x = NULL
+  )
+```
 
 **genes from paper**
 
@@ -205,9 +284,9 @@ symbols <- c(
   "Ifnb1", "Ifit1", "Ifit3", "Oas1a", "Oas2", "Oas3", "Oasl1", "Oasl2", "Mx1", "Stat2", "Irf7", "Irf9"
 )
 
-Case_typeI <- gfilter(symbols, WT_Case_DKO_Case)
-WT_typeI <- gfilter(symbols, WT_Control_WT_Case)
-DKO_typeI <- gfilter(symbols, DKO_Control_DKO_Case)
+Case_typeI <- gfilter(symbols_I, WT_Case_DKO_Case)
+WT_typeI <- gfilter(symbols_I, WT_Control_WT_Case)
+DKO_typeI <- gfilter(symbols_I, DKO_Control_DKO_Case)
 
 
 ## L7 (type II IFN)
@@ -215,9 +294,9 @@ symbols <- c(
   "Ifng", "Irf1", "Irf2", "Irf8", "Il12rb1", "Il12rb2", "Tap1", "Tap2", "Gbp2", "Gbp3", "Gbp4", "Gbp5", "Gbp6", "Gbp8", "Gbp9", "Gbp10", "Gbp11"
 )
 
-Case_typeII <- gfilter(symbols, WT_Case_DKO_Case)
-WT_typeII <- gfilter(symbols, WT_Control_WT_Case)
-DKO_typeII <- gfilter(symbols, DKO_Control_DKO_Case)
+Case_typeII <- gfilter(symbols_II, WT_Case_DKO_Case)
+WT_typeII <- gfilter(symbols_II, WT_Control_WT_Case)
+DKO_typeII <- gfilter(symbols_II, DKO_Control_DKO_Case)
 ```
 
 
