@@ -406,7 +406,7 @@ if (!require("org.Mm.eg.db", quietly = TRUE))
 
 
 Call enrichGO
-```
+```{r}
 # Select significant genes WT control and cases and run the enrichment via Gene Ontology
 ego_gen <- function(comparison, DEresults){
   ego <- clusterProfiler::enrichGO(
@@ -428,6 +428,10 @@ ego_gen <- function(comparison, DEresults){
 ego_WT <- ego_gen(WT_Control_WT_Case, dss)
 ego_DKO <- ego_gen(DKO_Control_DKO_Case, dss)
 ego_Case <- ego_gen(WT_Case_DKO_Case, dss)
+
+dotplot(ego_Case)
+dotplot(ego_DKO)
+dotplot(ego_WT)
 ```
 
 - *gene = sig*
@@ -455,9 +459,3 @@ ego_Case <- ego_gen(WT_Case_DKO_Case, dss)
 
 - *maxGSSize = 150*
   maximal size of genes annotated for testing
-
-
-Work on the results of enrichGO
-```
-dotplot(ego_WT)
-```
