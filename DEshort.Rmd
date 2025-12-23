@@ -100,7 +100,7 @@ get_results <- function(DEout, this, to_that){
   return(filt_comp)
 }
 
-WT_Case_KO_Case <- get_results(dss, "Lung_WT_Case", "Lung_DKO_Case")
+WT_Case_DKO_Case <- get_results(dss, "Lung_WT_Case", "Lung_DKO_Case")
 WT_Control_WT_Case <- get_results(dss, "Lung_WT_Control", "Lung_WT_Case") # WT control vs WT case
 DKO_Control_DKO_Case <- get_results(dss, "Lung_DKO_Control", "Lung_DKO_Case")
 ```
@@ -164,7 +164,7 @@ paste0("For DKO control vs case are ", sum(DKO_Control_DKO_Case$log2FoldChange >
 Based on the original publication, select 2-3 genes that are of particular interest and investigate their expression level. 
 make **SUMMARY REPORT TABLE 2** for the selected genes with name, ENSEMBL name, pathway, count.
 
-```{r}
+```
 common <- rownames(WT_typeII)[which(! rownames(WT_typeII) %in% rownames(DKO_typeII))]
 
 DKO_typeI[which(rownames(DKO_typeI) == "ENSMUSG00000052776"),]
@@ -189,6 +189,7 @@ Irf1 (type II) ENSMUSG00000018899
 take the vsd information on the corrected variance and plot those
 
 ```{r}
+# Define genes of interest
 gene_annot <- data.frame(
   Gene = c(
     "ENSMUSG00000052776",
@@ -203,22 +204,35 @@ gene_annot <- data.frame(
     "Irf1 (type II)\nENSMUSG00000018899"
   )
 )
-# "StatII (type I)\nENSMUSG00000040033"
 
+# Extract expression data for selected genes from vsd_mat
+genes_of_interest <- gene_annot$Gene
+vsd_subset <- vsd_mat[genes_of_interest, ]
+
+# Convert to data frame and add Gene column
+df_wide <- as.data.frame(t(vsd_subset))
+df_wide$Sample <- rownames(df_wide)
+
+# Reshape to long format
+library(tidyr)
 library(dplyr)
 
-df_long <- df_long %>%
+df_long <- df_wide %>%
+  pivot_longer(cols = -Sample, names_to = "Gene", values_to = "Expression") %>%
+  left_join(sample_info, by = "Sample") %>%
   left_join(gene_annot, by = "Gene")
 
-# convert Label to a factor with the specific order
+# Convert Label to a factor with the specific order
 df_long$Label <- factor(df_long$Label, levels = c(
   "Oas1a (type I)\nENSMUSG00000052776",
   "Ifit1 (type I)\nENSMUSG00000034459",
   "Gbp5 (type II)\nENSMUSG00000105504",
   "Irf1 (type II)\nENSMUSG00000018899"
 ))
+```
 
-
+```{r}
+# Define comparisons for statistical testing
 comparisons <- list(
   c("Lung_WT_Control", "Lung_WT_Case"),
   c("Lung_DKO_Control", "Lung_DKO_Case"),
@@ -327,9 +341,9 @@ symbols <- c(
   "Ifnb1", "Ifit1", "Ifit3", "Oas1a", "Oas2", "Oas3", "Oasl1", "Oasl2", "Mx1", "Stat2", "Irf7", "Irf9"
 )
 
-Case_typeI <- gfilter(symbols_I, WT_Case_DKO_Case)
-WT_typeI <- gfilter(symbols_I, WT_Control_WT_Case)
-DKO_typeI <- gfilter(symbols_I, DKO_Control_DKO_Case)
+Case_typeI <- gfilter(symbols, WT_Case_DKO_Case)
+WT_typeI <- gfilter(symbols, WT_Control_WT_Case)
+DKO_typeI <- gfilter(symbols, DKO_Control_DKO_Case)
 
 
 ## L7 (type II IFN)
@@ -337,9 +351,9 @@ symbols <- c(
   "Ifng", "Irf1", "Irf2", "Irf8", "Il12rb1", "Il12rb2", "Tap1", "Tap2", "Gbp2", "Gbp3", "Gbp4", "Gbp5", "Gbp6", "Gbp8", "Gbp9", "Gbp10", "Gbp11"
 )
 
-Case_typeII <- gfilter(symbols_II, WT_Case_DKO_Case)
-WT_typeII <- gfilter(symbols_II, WT_Control_WT_Case)
-DKO_typeII <- gfilter(symbols_II, DKO_Control_DKO_Case)
+Case_typeII <- gfilter(symbols, WT_Case_DKO_Case)
+WT_typeII <- gfilter(symbols, WT_Control_WT_Case)
+DKO_typeII <- gfilter(symbols, DKO_Control_DKO_Case)
 ```
 
 
@@ -392,19 +406,28 @@ if (!require("org.Mm.eg.db", quietly = TRUE))
 
 
 Call enrichGO
-```{r}
-# Select significant genes WT control and casees
-sig <- rownames(res_WT_Control_WT_Case)[which(res_WT_Control_WT_Case$padj < 0.05)]
+```
+# Select significant genes WT control and cases and run the enrichment via Gene Ontology
+ego_gen <- function(comparison, DEresults){
+  ego <- clusterProfiler::enrichGO(
+    gene = rownames(comparison), 
+    universe = rownames(DEresults),
+    OrgDb = org.Mm.eg.db,
+    ont = "BP",
+    keyType = "ENSEMBL",
+    maxGSSize = 150,
+    pvalueCutoff = 0.05
+    )
+  
+  # filter for genes with log2FC higher than +/- 1 (2x DE)
+  ego@result <- ego@result[which(-1 > ego@result$FoldEnrichment | 1 < ego@result$FoldEnrichment), ]
+  
+  return(ego)
+}
 
-ego <- clusterProfiler::enrichGO(
-  gene = sig, 
-  universe = rownames(dss),
-  OrgDb = org.Mm.eg.db,
-  ont = "BP",
-  keyType = "ENSEMBL",
-  maxGSSize = 150,
-  pvalueCutoff = 0.05
-  )
+ego_WT <- ego_gen(WT_Control_WT_Case, dss)
+ego_DKO <- ego_gen(DKO_Control_DKO_Case, dss)
+ego_Case <- ego_gen(WT_Case_DKO_Case, dss)
 ```
 
 - *gene = sig*
@@ -435,49 +458,6 @@ ego <- clusterProfiler::enrichGO(
 
 
 Work on the results of enrichGO
-```{r}
-dotplot(ego)
 ```
-
-```{r}
-dfego <- ego[grepl("interferon|ifn|ifit|oas", ego$Description, ignore.case=TRUE), ]
-
-# find myeloid / granulocytes
-mye_idx <- grepl("myeloid|granulocyte|neutrophil|il-1|interleukin-1|il-17|interleukin-17|immunoglobulin|antibody|cytotox|nk cell|natural killer", 
-             ego$Description, ignore.case=TRUE)
+dotplot(ego_WT)
 ```
-
-
-
-```{r}
-ego_df <- as.data.frame(ego)
-
-keywords <- c(
-  "granulocyte", "myeloid", "neutrophil",
-  "immunoglobulin", "antibody", "cytotoxic", 
-  "nk cell", "natural killer"
-)
-
-immune_ids <- ego_df[grepl(paste(keywords, collapse="|"), ego_df$Description, ignore.case = TRUE), ]
-
-ego_immune <- ego
-ego_immune@result <- ego@result[ego@result$ID %in% immune_ids$ID, ]
-
-dotplot(ego_immune, showCategory = 20)
-```
-
-
-
-
-
-
-
-```
-custom_sets <- list(
-  Granulocyte = c("Ly6g","S100a8","S100a9","Mpo"),
-  NK_cells    = c("Nkg7","Gzmb","Prf1"),
-  Immunoglobulin = c("Ighm","Ighg1","Igkc","Iglc1")
-)
-```
-
-
