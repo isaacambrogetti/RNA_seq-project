@@ -188,7 +188,7 @@ Irf1 (type II) ENSMUSG00000018899
 
 take the vsd information on the corrected variance and plot those
 
-```{r, fig.width=8, fig.height=10}
+```{r}
 gene_annot <- data.frame(
   Gene = c(
     "ENSMUSG00000052776",
@@ -228,30 +228,63 @@ comparisons <- list(
 library(ggplot2)
 library(ggpubr)
 
-ggplot(df_long, aes(x = Group, y = Expression, fill = Group)) +
-  geom_boxplot(outlier.shape = NA) +
-  geom_jitter(width = 0.15, size = 2) +
+# These colors help distinguish between WT and DKO groups clearly [1, 2]
+group_colors <- c(
+  "Lung_WT_Control"  = "#CCCCCC", # Light Grey
+  "Lung_WT_Case"     = "#00008B", # Dark Blue
+  "Lung_DKO_Control" = "#FFD700", # Gold/Yellow
+  "Lung_DKO_Case"    = "#FF4500"  # Orange-Red
+)
 
+# 2. Updated Plotting Code
+ggplot(df_long, aes(x = Group, y = Expression, fill = Group)) +
+  # Add transparency (alpha) to the boxplot to make it look cleaner
+  geom_boxplot(outlier.shape = NA, alpha = 0.7, color = "black") + 
+  # Increase jitter transparency to avoid clutter while showing every replicate [5]
+  geom_jitter(width = 0.15, size = 1.5, alpha = 0.5) +
+
+  # Maintain your factor-based ordering for Oas1a, Ifit1, Gbp5, and Irf1 [6, 7]
   facet_wrap(~ Label, scales = "free_y") +
 
   stat_compare_means(
     comparisons = comparisons,
     method = "wilcox.test",
     label = "p.signif",
-    hide.ns = TRUE
+    hide.ns = TRUE,
+    step.increase = 0.12 # Prevents p-value labels from overlapping
   ) +
 
-  theme_bw() +
+  # Switch to theme_minimal to remove the heavy grey background [3]
+  theme_minimal(base_size = 12) + 
   theme(
+    # Remove the grey boxes behind the facet labels (gene names)
+    strip.background = element_blank(), 
+    strip.text = element_text(face = "bold", size = 10),
+    
+    # Clean up the axes and remove background clutter
+    panel.grid.minor = element_blank(),
+    panel.grid.major.x = element_blank(),
+    axis.line = element_line(color = "black"),
     axis.text.x = element_text(angle = 45, hjust = 1),
-    strip.text = element_text(size = 10),
-    legend.position = "none"
+    
+    legend.position = "none" # Groups are already labeled on the X-axis
   ) +
+  
+  # Apply the custom color scale
+  scale_fill_manual(values = group_colors) +
+  
   labs(
-    title = "VST expression of selected interferon-related genes",
-    y = "VST expression",
+    title = "VST Expression of Selected Interferon-Related Genes",
+    y = "VST Normalized Expression",
     x = NULL
   )
+
+ggsave(
+  filename = "IFN_genes_VST_boxplot.png", # You can also use .pdf, .jpeg, or .tiff
+  width = 12,                          # Width in inches
+  height = 8.5,                          # Height in inches
+  dpi = 300                            # High resolution for the report
+)
 ```
 
 **genes from paper**
