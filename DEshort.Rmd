@@ -167,7 +167,7 @@ make **SUMMARY REPORT TABLE 2** for the selected genes with name, ENSEMBL name, 
 ```{r}
 common <- rownames(WT_typeII)[which(! rownames(WT_typeII) %in% rownames(DKO_typeII))]
 
-WT_typeII[which(rownames(WT_typeII) == "ENSMUSG00000024339"),]
+DKO_typeI[which(rownames(DKO_typeI) == "ENSMUSG00000052776"),]
 ```
 
 After comparing the DE genes in the three different comparisons, I choose four representative ones from different BP families that explain best what has been concluded in the paper.
@@ -203,11 +203,21 @@ gene_annot <- data.frame(
     "Irf1 (type II)\nENSMUSG00000018899"
   )
 )
+# "StatII (type I)\nENSMUSG00000040033"
 
 library(dplyr)
 
 df_long <- df_long %>%
   left_join(gene_annot, by = "Gene")
+
+# convert Label to a factor with the specific order
+df_long$Label <- factor(df_long$Label, levels = c(
+  "Oas1a (type I)\nENSMUSG00000052776",
+  "Ifit1 (type I)\nENSMUSG00000034459",
+  "Gbp5 (type II)\nENSMUSG00000105504",
+  "Irf1 (type II)\nENSMUSG00000018899"
+))
+
 
 comparisons <- list(
   c("Lung_WT_Control", "Lung_WT_Case"),
