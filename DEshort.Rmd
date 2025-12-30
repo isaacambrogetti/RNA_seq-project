@@ -55,18 +55,16 @@ Now give the data to DEseq2 so that it can create a dds (DESeq Data Set that is 
 ```{r message=FALSE, warning=FALSE, paged.print=FALSE}
 dds <- DESeq2::DESeqDataSetFromMatrix(countData = data,
                                colData = sample_info,
-                               design= ~ Group)  # UNUSEFUL do not change df to matrix and then df again
+                               design= ~ Group)
 ```
 
 
 Now remove the dependence of the variance on the mean by running `DESeq2::vst()` on dds. For visualization, we typically do not want to consider the experimental groups so set `blind = TRUE`.
-
 ```{r, echo=FALSE}
 vsd <- DESeq2::vst(dds, blind = TRUE)
 ```
 
 plot the PCA to check whether it is all right with the data and it is possible to distinguish in the 4 clusters where they belong to.
-
 ```{r}
 # PCA using top 500 features by variance
 DESeq2::plotPCA(vsd, intgroup = "Group")
@@ -89,20 +87,18 @@ To count how many are differentially expressed, check how many are not NA in the
 
 Check the number of differentially expressed genes in each comparison with *padj < 0.05*
 
-- **WT case and DKO case**
-
 ```{r}
 get_results <- function(DEout, this, to_that){
   res_comp <- DESeq2::results(DEout, contrast = c("Group", this, to_that)) # extract comparison
   
-  filt_comp <- res_comp[res_comp$padj < 0.05 & ! is.na(res_comp$padj), ] # filter for padj
+  filt_comp <- res_comp[res_comp$padj < 0.05 & ! is.na(res_comp$padj), ] # filter for padj and remove NA
   
   return(filt_comp)
 }
 
-WT_Case_DKO_Case <- get_results(dss, "Lung_WT_Case", "Lung_DKO_Case")
-WT_Control_WT_Case <- get_results(dss, "Lung_WT_Control", "Lung_WT_Case") # WT control vs WT case
-DKO_Control_DKO_Case <- get_results(dss, "Lung_DKO_Control", "Lung_DKO_Case")
+WT_Case_DKO_Case <- get_results(dss, "Lung_WT_Case", "Lung_DKO_Case") # WT cases against DKO cases
+WT_Control_WT_Case <- get_results(dss, "Lung_WT_Control", "Lung_WT_Case") # WT control against WT case
+DKO_Control_DKO_Case <- get_results(dss, "Lung_DKO_Control", "Lung_DKO_Case") # DKO control against DKO case
 ```
 
 
@@ -115,15 +111,14 @@ vsd_mat <- SummarizedExperiment::assay(vsd)
 
 heatplot <- function(comparison, samples, vsd, title, leg = TRUE){
   # 2. Select significant genes for the comparison
-  filtered <- comparison[(comparison$log2FoldChange > 1 | comparison$log2FoldChange < -1), ]
-  filtered <- filtered[order(filtered$padj),]
-  filtered <- filtered[1:25,]
-  heat_matrix <- vsd[rownames(filtered),]
+  filtered <- comparison[(comparison$log2FoldChange > 1 | comparison$log2FoldChange < -1), ] # | log2FC | > 1 filtering
+  filtered <- filtered[order(filtered$padj),] # increasing order adjusted p-val
+  filtered <- filtered[1:25,] # select the first 25 entries
+  heat_matrix <- vsd[rownames(filtered),] # obtain a DESeq object matrix by filtering the VST result object 
   
-  # 3. Build annotation for the comparison
-  ann <- samples[, "Group", drop = FALSE]
-  rownames(ann) <- samples$Sample
-  ann <- ann[colnames(heat_matrix), , drop = FALSE]
+  # 3. Build annotation data frame for the comparison
+  ann <- samples[, "Group", drop = FALSE] # extract Group column for the samples information
+  rownames(ann) <- samples$Sample # index ann based on the samples
   
   # 4. Plot heatmap
   library(pheatmap)
@@ -151,8 +146,13 @@ heatplot(DKO_Control_DKO_Case, sample_info, vsd_mat, title = "DKO controls vs ca
 How many genes are differentially expressed (DE) in the pairwise comparisons you selected (e.g. padj < 0.05)? 
 ```{r}
 paste0("There has been found ", nrow(WT_Case_DKO_Case), " DE genes in WT vs DKO case comparison having padj < 0.05.")
+paste0("There has been found ", nrow(WT_Case_DKO_Case[which(WT_Case_DKO_Case$log2FoldChange > 1 | WT_Case_DKO_Case$log2FoldChange < -1), ]), " DE genes in WT vs DKO case comparison having padj < 0.05 and | log2FC | > 1.")
+
 paste0("There has been found ", nrow(WT_Control_WT_Case), " DE genes in WT control vs case comparison having padj < 0.05.")
+paste0("There has been found ", nrow(WT_Control_WT_Case[which(WT_Control_WT_Case$log2FoldChange > 1 | WT_Control_WT_Case$log2FoldChange < -1), ]), " DE genes in WT control vs case comparison having padj < 0.05 and | log2FC | > 1.")
+
 paste0("There has been found ", nrow(DKO_Control_DKO_Case), " DE genes in DKO control vs case comparison having padj < 0.05.")
+paste0("There has been found ", nrow(DKO_Control_DKO_Case[which(DKO_Control_DKO_Case$log2FoldChange > 1 | DKO_Control_DKO_Case$log2FoldChange < -1), ]), " DE genes in DKO control vs case comparison having padj < 0.05 and | log2FC | > 1.")
 ```
 How many of the DE genes are up-regulated vs down-regulated meaningfully (padj < 0.05)?
 ```{r}
@@ -162,7 +162,7 @@ paste0("For DKO control vs case are ", sum(DKO_Control_DKO_Case$log2FoldChange >
 ```
 
 Based on the original publication, select 2-3 genes that are of particular interest and investigate their expression level. 
-make **SUMMARY REPORT TABLE 2** for the selected genes with name, ENSEMBL name, pathway, count.
+make **SUPPLEMENTARY REPORT TABLE 2** for the selected genes with name, ENSEMBL name, pathway, count, where DE.
 
 ```
 common <- rownames(WT_typeII)[which(! rownames(WT_typeII) %in% rownames(DKO_typeII))]
@@ -371,17 +371,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ## 7. Overrepresentation analysis
 
 
-**Hypergeometric test** to check overrepresentation
-
-
-The databases for overrepresentation test where you can get the pathway categorization are:
-- GO
-- KEGG
-- Reactome
-- Wikipaths
-
-I would use GO and KEGG (more curated? check why don't go randomly)
-
+**Hypergeometric test** is used to check overrepresentation for each biological pathways (BP).
 
 Install clusterProfiler
 ```{r, message=FALSE, warning=FALSE}
@@ -429,6 +419,7 @@ ego_WT <- ego_gen(WT_Control_WT_Case, dss)
 ego_DKO <- ego_gen(DKO_Control_DKO_Case, dss)
 ego_Case <- ego_gen(WT_Case_DKO_Case, dss)
 
+# plotting the results
 dotplot(ego_Case)
 dotplot(ego_DKO)
 dotplot(ego_WT)
@@ -455,7 +446,7 @@ dotplot(ego_WT)
 
 - *keyType = "ENSEMBL"*
   
-  Because your gene IDs (row names) are ENSEMBL IDs like "ENSMUSG00000000001".
+  Because the gene IDs (row names) are ENSEMBL IDs like "ENSMUSG00000000001".
 
 - *maxGSSize = 150*
   maximal size of genes annotated for testing
