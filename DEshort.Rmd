@@ -1,6 +1,8 @@
 ---
 title: "DEshort"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 Differential expression analysis aims at distinguish the cluster of genes that are over- or under- represented in each sample. Comparing case and control samples aims at identifying which are the genes correlated to the disease.
@@ -392,6 +394,8 @@ Download Bioconductor package with genome wide annotation for your species
 ```{r, message=FALSE, warning=FALSE}
 if (!require("org.Mm.eg.db", quietly = TRUE))
   BiocManager::install("org.Mm.eg.db")
+
+library("org.Mm.eg.db")
 ```
 
 

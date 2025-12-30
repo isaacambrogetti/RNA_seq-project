@@ -60,3 +60,13 @@ Your DE genes: n = 400
 DE genes in that GO term: k = 20
 You test:
 Are 20 DE genes in this pathway more than expected by chance?
+
+
+#### Fold Change (FC) 
+Is the ratio between the mean of the observations per condition, in the DESeq2 we get the logFC because it centers the values around 0:
+when larger than 0 the expession is higher in one condition than the other (FC), usually control is denominator so you compare everything to the 0 which is control
+
+e.g., logFC = -12 then the condition 1 expresses that gene much less than the condition 2.
+
+#### p-adjusted
+every time we have a gene we're making a statistical test, in DEseq we're making thousands of test on the same value which means that by chance it is possible to have 
