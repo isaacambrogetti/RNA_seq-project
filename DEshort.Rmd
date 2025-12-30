@@ -424,9 +424,9 @@ ego_DKO <- ego_gen(DKO_Control_DKO_Case, dss)
 ego_Case <- ego_gen(WT_Case_DKO_Case, dss)
 
 # plotting the results
-dotplot(ego_Case)
-dotplot(ego_DKO)
-dotplot(ego_WT)
+dotplot(ego_Case, title="WT vs DKO cases")
+dotplot(ego_DKO, title="DKO controls vs cases")
+dotplot(ego_WT, title="WT controls vs cases")
 ```
 
 - *gene = sig*
