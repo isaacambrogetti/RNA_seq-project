@@ -12,6 +12,7 @@ The library preparation protocol was strand-specific and the libraries were sequ
 
 
 To help reproducibility for the part on IBU cluster containers have been used to run the programs, and for the R part the environment have been saved and loaded on GitHub using renv.
+From step 4 on, all the scripts are findable in DEshort.Rmd and can be run with R, the others were run in the IBU cluster.
 
 - used `symlink_reads.sh` to create links to the read files not to physically copy them to my repository
 - cp /data/courses/rnaseq_course/toxoplasma_de/reads_Lung/* /data/users/iambrogetti/RNA-seq/data/reads_Lung/
@@ -148,20 +149,10 @@ Choose interesting comparisons (WT contr v cases, DKO contr v cases)
 
 In order to do so extract the pairwise comparison results using `DESeq::results()` analyse them and plot them with heatmap or volcano plot.
 
-Checking adjusted p-value and logFC allows us to find the most relevant DE genes and understand how much they are under/over-expressed. The plots helps us visualize them (useful for the report).
+Checking adjusted p-value and logFC allows us to find the most relevant DE genes and understand how much they are under/over-expressed. The plots helps us visualize them:
 
-- Heatmap
-- Vulcano plot
-Choose one to use for the report
+- Heatmap (chosen for the report)
+- Volcano (plots version present in the DEanalysis.Rmd - not used in the report)
 
-## Important knowledge
-
-#### Fold Change (FC) 
-Is the ratio between the mean of the observations per condition, in the DESeq2 we get the logFC because it centers the values around 0:
-when larger than 0 the expession is higher in one condition than the other (FC), usually control is denominator so you compare everything to the 0 which is control
-
-e.g., logFC = -12 then the condition 1 expresses that gene much less than the condition 2.
-
-#### p-adjusted
-every time we have a gene we're making a statistical test, in DEseq we're making thousands of test on the same value which means that by chance it is possible to have 
-
+## 6. Overexpression analysis
+Using GO, find what are the enriched BP for the DE genes to have an overview of what is going on inside the cells under different conditions.
