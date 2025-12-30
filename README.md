@@ -1,27 +1,33 @@
 # Detect differentially expressed genes from bulk RNA-seq data
 
-This workflow starts from Illumina sequencing data (fastq files). The goal is to produce lists of genes that are differentially
-expressed between two experimental groups, and identify gene ontology (GO) terms enriched for DE genes.
+This workflow starts from Illumina sequencing data (fastq files). The goal is to check which genes are differentially
+expressed between three experimental groups to understand how the DKO affect the cells pathways under toxoplasmosis, and identify gene ontology (GO) terms enriched for DE genes.
 
-The dataset includes 3-5 replicates from two tissues (blood and lung) of mice with two different genetic backgrounds (wildtype
+The dataset includes 3-5 replicates from lungs tissues of mice with two different genetic backgrounds (wildtype
 and interferon alpha/gamma receptor double knockout). These mice were either infected with toxoplasma or are uninfected
-controls. I work on wt lungs sample. 
+controls.
 
-The fastq files are here: `/data/courses/rnaseq_course/toxoplasma_de`, where you also find a README file with more details. The samples are a subset from `Singhania et al. 2019` and the fastq files were downloaded through the Gene Expression Omnibus (GEO), accession GSE119855. 
+The fastq files are here: `/data/courses/rnaseq_course/toxoplasma_de`, where you also find a README file with sample information on which group they belong to. The samples are a subset from `Singhania et al. 2019` and the fastq files were downloaded through the Gene Expression Omnibus (GEO), accession GSE119855. 
 The library preparation protocol was strand-specific and the libraries were sequenced on an Illumina HiSeq 4000 in paired-end mode.
 
 
-It is recommended to use containers for the tools that you need to use on the cluster. This also helps with reproducibility and
-portability, so that your analysis is not dependent on a specific setup on a system.
+To help reproducibility for the part on IBU cluster containers have been used to run the programs, and for the R part the environment have been saved and loaded on GitHub using renv.
 
-- used `symlink_reads.sh` to create links to the read files not to physically copy them to my repository (does not work cause I need the unzipped files(?))
+- used `symlink_reads.sh` to create links to the read files not to physically copy them to my repository
 - cp /data/courses/rnaseq_course/toxoplasma_de/reads_Lung/* /data/users/iambrogetti/RNA-seq/data/reads_Lung/
 
 For interactive sessions:
 
 + ```srun --pty -t 00:30:00 --partition=pshort_el8 -n 1 -c 1 --mem=2G bash```
 
-
+## How the signaling works (simplified)
+1. A cell produces interferon cytokines (IFN-α/β or IFN-γ)
+2. Interferons bind to their specific receptors:
+3. Type I IFNs → IFNAR
+4. Type II IFN → IFNGR
+5. This activates the JAK–STAT signaling pathway
+6. STAT transcription factors enter the nucleus
+7. ISGs (like Oas1a, Ifit1, Gbp5, Irf1) are transcribed
 
 ## 1. Quality checks
 
