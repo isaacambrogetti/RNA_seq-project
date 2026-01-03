@@ -145,7 +145,7 @@ Do DESeq2 and get a general overview of the data composition with PCAs after nor
 
 
 ## 5. Differential expression analysis
-Choose interesting comparisons (WT contr v cases, DKO contr v cases)
+Choose comparisons to answer the research question (WT contr v cases, DKO contr v cases, WT cases v DKO cases)
 
 In order to do so extract the pairwise comparison results using `DESeq::results()` analyse them and plot them with heatmap or volcano plot.
 
