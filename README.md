@@ -11,8 +11,8 @@ The fastq files are here: `/data/courses/rnaseq_course/toxoplasma_de`, where you
 The library preparation protocol was strand-specific and the libraries were sequenced on an Illumina HiSeq 4000 in paired-end mode.
 
 
-To help reproducibility for the part on IBU cluster containers have been used to run the programs, and for the R part the environment have been saved and loaded on GitHub using renv.
-From step 4 on, all the scripts are findable in DEshort.Rmd and can be run with R, the others were run in the IBU cluster.
+To help reproducibility for the part on IBU cluster containers have been used to run the programs most of the time, and for the R part the environment have been saved and loaded on GitHub using renv.
+From step 4 on, all the scripts are findable in DEscripts.Rmd and can be run with R, the others were run in the IBU cluster in the repository /data/users/iambrogetti/RNA-seq.
 
 - used `symlink_reads.sh` to create links to the read files not to physically copy them to my repository
 - cp /data/courses/rnaseq_course/toxoplasma_de/reads_Lung/* /data/users/iambrogetti/RNA-seq/data/reads_Lung/
