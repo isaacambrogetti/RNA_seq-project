@@ -1,0 +1,11 @@
+.DS_store
+.RData
+.Rhistory
+.Rproj.user
+.Rprofile
+Lung_modules_paper.csv
+ToDo.html
+ToDo.md
+R_steps.Rproj
+environment.yaml
+renv
