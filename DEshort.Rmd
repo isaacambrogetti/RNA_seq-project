@@ -164,7 +164,6 @@ paste0("For DKO control vs case are ", sum(DKO_Control_DKO_Case$log2FoldChange >
 ```
 
 Based on the original publication, select 2-3 genes that are of particular interest and investigate their expression level. 
-make **SUPPLEMENTARY REPORT TABLE 2** for the selected genes with name, ENSEMBL name, pathway, count, where DE.
 
 ```
 common <- rownames(WT_typeII)[which(! rownames(WT_typeII) %in% rownames(DKO_typeII))]
@@ -182,11 +181,6 @@ After comparing the DE genes in the three different comparisons, I choose four r
   ||
 - Irf1 (type II) ENSMUSG00000018899
   ||
-
-Oas1a (type I) ENSMUSG00000052776
-Ifit1 (type I) ENSMUSG00000034459
-Gbp5 (type II) ENSMUSG00000105504
-Irf1 (type II) ENSMUSG00000018899
 
 take the vsd information on the corrected variance and plot those
 
@@ -270,10 +264,10 @@ ggplot(df_long, aes(x = Group, y = Expression, fill = Group)) +
     step.increase = 0.12 # Prevents p-value labels from overlapping
   ) +
 
-  # Switch to theme_minimal to remove the heavy grey background [3]
+  # Switch to theme_minimal
   theme_minimal(base_size = 12) + 
   theme(
-    # Remove the grey boxes behind the facet labels (gene names)
+    # Remove the grey boxes behind the gene names
     strip.background = element_blank(), 
     strip.text = element_text(face = "bold", size = 10),
     
