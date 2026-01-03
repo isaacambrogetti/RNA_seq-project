@@ -1,10 +1,10 @@
+.gitignore
 .DS_store
 .RData
 .Rhistory
 .Rproj.user
 .Rprofile
+reportNotes.Rmd
 R_steps.Rproj
 environment.yaml
 renv
-notes_report.txt
-notes_report.md
