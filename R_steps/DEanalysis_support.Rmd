@@ -349,6 +349,7 @@ How to find genes:
  - look for the gene in the comparison of interest and extract info
  - box plot with the info
 
+
 ### genes from paper
 Install database
 ```{r, message=FALSE, warning=FALSE}
@@ -406,10 +407,23 @@ Case_typeII <- gfilter(symbols, WT_Case_DKO_Case)
 ```
 
 
+```{r}
+library(DESeq2)
 
+## Assuming you already created a DESeqDataSet called dds
+norm_counts <- counts(dss, normalized = TRUE)
 
+## Subset genes of interest
+norm_subset <- norm_counts[genes_of_interest, ]
 
+## Compute mean normalized expression
+gene_summary <- data.frame(
+  GeneID = rownames(norm_subset),
+  MeanNormalizedCount = rowMeans(norm_subset)
+)
 
+gene_summary
+```
 
 
 

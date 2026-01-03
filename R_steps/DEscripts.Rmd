@@ -1,7 +1,6 @@
 ---
 title: "DEshort"
 output:
-  pdf_document: default
   html_document: default
 ---
 
@@ -11,7 +10,7 @@ Differential expression analysis aims at distinguish the cluster of genes that a
 ### 0. importing data
 Import the dataframe and filter unuseful information
 ```{r}
-data <- read.table("R_steps/reads_gene_counts.txt", 
+data <- read.table("reads_gene_counts.txt", 
                    header = TRUE, 
                    sep = "\t")
 colnames(data)
@@ -32,7 +31,7 @@ rownames(data) <- data[,1]   # set first column as row names
 data <- data[ , -1]          # remove the first column
 ```
 
-## 5. Exploratory data analysis (DESeq2)
+## 4. Exploratory data analysis (DESeq2)
 Install DESeq2
 ```
 if (!require("BiocManager", quietly = TRUE))
@@ -44,7 +43,7 @@ BiocManager::install("DESeq2")
 Get the sample information into a table containing the sample name and to which group it belongs.
 ```{r}
 sample_info <- read.delim(
-  "R_steps/sample_info.txt",
+  "sample_info.txt",
   header = TRUE,
   sep = " ",
   stringsAsFactors = FALSE,
@@ -73,11 +72,12 @@ DESeq2::plotPCA(vsd, intgroup = "Group")
 ```
 
 
-## 6. Differential Expression analysis
+## 5. Differential Expression analysis
 
-```{r}
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
 dss <- DESeq2::DESeq(dds)
-
+```
+```{r}
 dss
 
 DESeq2::resultsNames(dss)
@@ -145,7 +145,7 @@ heatplot(DKO_Control_DKO_Case, sample_info, vsd_mat, title = "DKO controls vs ca
 
 **SUMMARY REPORT TABLE 1**
 
-How many genes are differentially expressed (DE) in the pairwise comparisons you selected (e.g. padj < 0.05)? 
+#### 1. How many genes are differentially expressed (DE) in the pairwise comparisons you selected (e.g. padj < 0.05)? 
 ```{r}
 paste0("There has been found ", nrow(WT_Case_DKO_Case), " DE genes in WT vs DKO case comparison having padj < 0.05.")
 paste0("There has been found ", nrow(WT_Case_DKO_Case[which(WT_Case_DKO_Case$log2FoldChange > 1 | WT_Case_DKO_Case$log2FoldChange < -1), ]), " DE genes in WT vs DKO case comparison having padj < 0.05 and | log2FC | > 1.")
@@ -156,14 +156,67 @@ paste0("There has been found ", nrow(WT_Control_WT_Case[which(WT_Control_WT_Case
 paste0("There has been found ", nrow(DKO_Control_DKO_Case), " DE genes in DKO control vs case comparison having padj < 0.05.")
 paste0("There has been found ", nrow(DKO_Control_DKO_Case[which(DKO_Control_DKO_Case$log2FoldChange > 1 | DKO_Control_DKO_Case$log2FoldChange < -1), ]), " DE genes in DKO control vs case comparison having padj < 0.05 and | log2FC | > 1.")
 ```
-How many of the DE genes are up-regulated vs down-regulated meaningfully (padj < 0.05)?
+#### 2. How many of the DE genes are up-regulated vs down-regulated meaningfully (padj < 0.05)?
 ```{r}
 paste0("For WT vs DKO case are ", sum(WT_Case_DKO_Case$log2FoldChange > 1), " upregulated and ", length(WT_Case_DKO_Case$log2FoldChange) - sum(WT_Case_DKO_Case$log2FoldChange > -1), " downregulated.")
 paste0("For WT controls vs cases are ", sum(WT_Control_WT_Case$log2FoldChange > 1), " upregulated and ", length(WT_Control_WT_Case$log2FoldChange) - sum(WT_Control_WT_Case$log2FoldChange > -1), " downregulated.")
 paste0("For DKO control vs case are ", sum(DKO_Control_DKO_Case$log2FoldChange > 1), " upregulated and ", length(DKO_Control_DKO_Case$log2FoldChange) - sum(DKO_Control_DKO_Case$log2FoldChange > -1), " downregulated.")
 ```
 
-Based on the original publication, select 2-3 genes that are of particular interest and investigate their expression level. 
+#### 3. Based on the original publication, select 2-3 genes that are of particular interest and investigate their expression level. 
+
+```{r, message=FALSE, warning=FALSE}
+# Install database
+if (!require("org.Mm.eg.db", quietly = TRUE))
+  BiocManager::install("org.Mm.eg.db")
+
+library(org.Mm.eg.db)
+library(AnnotationDbi)
+
+# function to obtain ENSEMBL names from their name
+gfilter <- function(symbols, dss){
+  ens_ids <- mapIds(
+    org.Mm.eg.db,
+    keys      = symbols,
+    column    = "ENSEMBL",
+    keytype   = "SYMBOL",
+    multiVals = "first"
+  )
+  
+  dss_fil <- dss[grepl(paste(unname(ens_ids), collapse="|"), row.names(dss), ignore.case = TRUE), ]
+  
+  # add gene name to the data frame
+  gene_map_one <- data.frame(
+    ENSEMBL = unname(ens_ids),
+    name    = names(ens_ids),
+    stringsAsFactors = FALSE
+  )
+
+  dss_fil$name <- gene_map_one$name[match(rownames(dss_fil), gene_map_one$ENSEMBL)]
+  
+  return(dss_fil)
+}
+
+# list of gene names to convert into ENSEMBLE codes
+## L5 (type I IFN)
+symbols <- c(
+  "Ifnb1", "Ifit1", "Ifit3", "Oas1a", "Oas2", "Oas3", "Oasl1", "Oasl2", "Mx1", "Stat2", "Irf7", "Irf9"
+)
+
+Case_typeI <- gfilter(symbols, WT_Case_DKO_Case)
+WT_typeI <- gfilter(symbols, WT_Control_WT_Case)
+DKO_typeI <- gfilter(symbols, DKO_Control_DKO_Case)
+
+
+## L7 (type II IFN)
+symbols <- c(
+  "Ifng", "Irf1", "Irf2", "Irf8", "Il12rb1", "Il12rb2", "Tap1", "Tap2", "Gbp2", "Gbp3", "Gbp4", "Gbp5", "Gbp6", "Gbp8", "Gbp9", "Gbp10", "Gbp11"
+)
+
+Case_typeII <- gfilter(symbols, WT_Case_DKO_Case)
+WT_typeII <- gfilter(symbols, WT_Control_WT_Case)
+DKO_typeII <- gfilter(symbols, DKO_Control_DKO_Case)
+```
 
 ```
 common <- rownames(WT_typeII)[which(! rownames(WT_typeII) %in% rownames(DKO_typeII))]
@@ -181,10 +234,12 @@ After comparing the DE genes in the three different comparisons, I choose four r
   ||
 - Irf1 (type II) ENSMUSG00000018899
   ||
+  
+--------------------------------------------------------------------------------
 
-take the vsd information on the corrected variance and plot those
+Take the vsd information on the corrected variance and plot those
 
-```{r}
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
 # Define genes of interest
 gene_annot <- data.frame(
   Gene = c(
@@ -226,8 +281,8 @@ df_long$Label <- factor(df_long$Label, levels = c(
   "Irf1 (type II)\nENSMUSG00000018899"
 ))
 ```
-
-```{r}
+Now plot the filtered table
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
 # Define comparisons for statistical testing
 comparisons <- list(
   c("Lung_WT_Control", "Lung_WT_Case"),
@@ -288,74 +343,7 @@ ggplot(df_long, aes(x = Group, y = Expression, fill = Group)) +
     y = "VST Normalized Expression",
     x = NULL
   )
-
-ggsave(
-  filename = "IFN_genes_VST_boxplot.png", # You can also use .pdf, .jpeg, or .tiff
-  width = 12,                          # Width in inches
-  height = 8.5,                          # Height in inches
-  dpi = 300                            # High resolution for the report
-)
 ```
-
-**genes from paper**
-
-```{r, message=FALSE, warning=FALSE}
-# Install database
-if (!require("org.Mm.eg.db", quietly = TRUE))
-  BiocManager::install("org.Mm.eg.db")
-
-library(org.Mm.eg.db)
-library(AnnotationDbi)
-
-# function to obtain ENSEMBL names from their name
-gfilter <- function(symbols, dss){
-  ens_ids <- mapIds(
-    org.Mm.eg.db,
-    keys      = symbols,
-    column    = "ENSEMBL",
-    keytype   = "SYMBOL",
-    multiVals = "first"
-  )
-  
-  dss_fil <- dss[grepl(paste(unname(ens_ids), collapse="|"), row.names(dss), ignore.case = TRUE), ]
-  
-  # add gene name to the data frame
-  gene_map_one <- data.frame(
-    ENSEMBL = unname(ens_ids),
-    name    = names(ens_ids),
-    stringsAsFactors = FALSE
-  )
-
-  dss_fil$name <- gene_map_one$name[match(rownames(dss_fil), gene_map_one$ENSEMBL)]
-  
-  return(dss_fil)
-}
-
-# list of gene names to convert into ENSEMBLE codes
-## L5 (type I IFN)
-symbols <- c(
-  "Ifnb1", "Ifit1", "Ifit3", "Oas1a", "Oas2", "Oas3", "Oasl1", "Oasl2", "Mx1", "Stat2", "Irf7", "Irf9"
-)
-
-Case_typeI <- gfilter(symbols, WT_Case_DKO_Case)
-WT_typeI <- gfilter(symbols, WT_Control_WT_Case)
-DKO_typeI <- gfilter(symbols, DKO_Control_DKO_Case)
-
-
-## L7 (type II IFN)
-symbols <- c(
-  "Ifng", "Irf1", "Irf2", "Irf8", "Il12rb1", "Il12rb2", "Tap1", "Tap2", "Gbp2", "Gbp3", "Gbp4", "Gbp5", "Gbp6", "Gbp8", "Gbp9", "Gbp10", "Gbp11"
-)
-
-Case_typeII <- gfilter(symbols, WT_Case_DKO_Case)
-WT_typeII <- gfilter(symbols, WT_Control_WT_Case)
-DKO_typeII <- gfilter(symbols, DKO_Control_DKO_Case)
-```
-
-
-
-
-
 
 --------------------------------------------------------------------------------
 
@@ -364,7 +352,7 @@ DKO_typeII <- gfilter(symbols, DKO_Control_DKO_Case)
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## 7. Overrepresentation analysis
+## 6. Overrepresentation analysis
 
 
 **Hypergeometric test** is used to check overrepresentation for each biological pathways (BP).
@@ -393,7 +381,7 @@ library("org.Mm.eg.db")
 ```
 
 
-Call enrichGO
+Call and plot enrichGO
 ```{r}
 # Select significant genes WT control and cases and run the enrichment via Gene Ontology
 ego_gen <- function(comparison, DEresults){
