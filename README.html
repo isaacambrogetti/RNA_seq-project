@@ -355,29 +355,31 @@ display: none;
 <div id="detect-differentially-expressed-genes-from-bulk-rna-seq-data" class="section level1">
 <h1>Detect differentially expressed genes from bulk RNA-seq data</h1>
 <p>This workflow starts from Illumina sequencing data (fastq files). The
-goal is to produce lists of genes that are differentially expressed
-between two experimental groups, and identify gene ontology (GO) terms
-enriched for DE genes.</p>
-<p>The dataset includes 3-5 replicates from two tissues (blood and lung)
-of mice with two different genetic backgrounds (wildtype and interferon
-alpha/gamma receptor double knockout). These mice were either infected
-with toxoplasma or are uninfected controls. I work on wt lungs
-sample.</p>
+goal is to check which genes are differentially expressed between three
+experimental groups to understand how the DKO affect the cells pathways
+under toxoplasmosis, and identify gene ontology (GO) terms enriched for
+DE genes.</p>
+<p>The dataset includes 3-5 replicates from lungs tissues of mice with
+two different genetic backgrounds (wildtype and interferon alpha/gamma
+receptor double knockout). These mice were either infected with
+toxoplasma or are uninfected controls.</p>
 <p>The fastq files are here:
 <code>/data/courses/rnaseq_course/toxoplasma_de</code>, where you also
-find a README file with more details. The samples are a subset from
-<code>Singhania et al. 2019</code> and the fastq files were downloaded
-through the Gene Expression Omnibus (GEO), accession GSE119855. The
-library preparation protocol was strand-specific and the libraries were
-sequenced on an Illumina HiSeq 4000 in paired-end mode.</p>
-<p>It is recommended to use containers for the tools that you need to
-use on the cluster. This also helps with reproducibility and
-portability, so that your analysis is not dependent on a specific setup
-on a system.</p>
+find a README file with sample information on which group they belong
+to. The samples are a subset from <code>Singhania et al. 2019</code> and
+the fastq files were downloaded through the Gene Expression Omnibus
+(GEO), accession GSE119855. The library preparation protocol was
+strand-specific and the libraries were sequenced on an Illumina HiSeq
+4000 in paired-end mode.</p>
+<p>To help reproducibility for the part on IBU cluster containers have
+been used to run the programs most of the time, and for the R part the
+environment have been saved and loaded on GitHub using renv. From step 4
+on, <strong>all the scripts are findable in R-steps/DEscripts.Rmd and
+can be run with R</strong>, the others were run in the IBU cluster in
+the repository /data/users/iambrogetti/RNA-seq.</p>
 <ul>
 <li>used <code>symlink_reads.sh</code> to create links to the read files
-not to physically copy them to my repository (does not work cause I need
-the unzipped files(?))</li>
+not to physically copy them to my repository</li>
 <li>cp /data/courses/rnaseq_course/toxoplasma_de/reads_Lung/*
 /data/users/iambrogetti/RNA-seq/data/reads_Lung/</li>
 </ul>
@@ -385,6 +387,18 @@ the unzipped files(?))</li>
 <ul>
 <li><code>srun --pty -t 00:30:00 --partition=pshort_el8 -n 1 -c 1 --mem=2G bash</code></li>
 </ul>
+<div id="how-the-signaling-works-simplified" class="section level2">
+<h2>How the signaling works (simplified)</h2>
+<ol style="list-style-type: decimal">
+<li>A cell produces interferon cytokines (IFN-α/β or IFN-γ)</li>
+<li>Interferons bind to their specific receptors:</li>
+<li>Type I IFNs → IFNAR</li>
+<li>Type II IFN → IFNGR</li>
+<li>This activates the JAK–STAT signaling pathway</li>
+<li>STAT transcription factors enter the nucleus</li>
+<li>ISGs (like Oas1a, Ifit1, Gbp5, Irf1) are transcribed</li>
+</ol>
+</div>
 <div id="quality-checks" class="section level2">
 <h2>1. Quality checks</h2>
 <ol style="list-style-type: decimal">
@@ -543,45 +557,30 @@ identifier).</li>
 </div>
 <div id="exploratory-data-analysis" class="section level2">
 <h2>4. Exploratory data analysis</h2>
-<p>Do the DESeq and get a general overview of the data composition with
+<p>Do DESeq2 and get a general overview of the data composition with
 PCAs after normalizing the variation.</p>
 </div>
 <div id="differential-expression-analysis" class="section level2">
 <h2>5. Differential expression analysis</h2>
-<p>Choose interesting comparisons (WT contr v cases, DKO contr v
-cases)</p>
+<p>Choose comparisons to answer the research question (WT contr v cases,
+DKO contr v cases, WT cases v DKO cases)</p>
 <p>In order to do so extract the pairwise comparison results using
 <code>DESeq::results()</code> analyse them and plot them with heatmap or
 volcano plot.</p>
 <p>Checking adjusted p-value and logFC allows us to find the most
 relevant DE genes and understand how much they are under/over-expressed.
-The plots helps us visualize them (useful for the report).</p>
-<div id="heatmap" class="section level3">
-<h3>5.1 Heatmap</h3>
-<p>?? what file did i need to unzip? The reference genome?, for sure not
-the fastq files of the samples</p>
-<p>Goal: find level of expression and differentially expressed genes</p>
-<p>step 4 do heat map</p>
-<p>which are the genes that change with the condition -&gt; fantasize
-but have a narrative</p>
-<p>p-adjusted every time we have a gene we’re making a statistical test,
-in DEseq we’re making thousands of test on the same value which means
-that by chance it is possible to have</p>
-<p>Vulcano plot</p>
+The plots helps us visualize them:</p>
+<ul>
+<li>Heatmap (chosen for the report)</li>
+<li>Volcano (plots version present in the DEanalysis.Rmd - not used in
+the report)</li>
+</ul>
 </div>
-</div>
-<div id="important-knowledge" class="section level2">
-<h2>Important knowledge</h2>
-<div id="fold-change-fc" class="section level4">
-<h4>Fold Change (FC)</h4>
-<p>Is the ratio between the mean of the observations per condition, in
-the DESeq2 we get the logFC because it centers the values around 0: when
-larger than 0 the expession is higher in one condition than the other
-(FC), usually control is denominator so you compare everything to the 0
-which is control</p>
-<p>e.g., logFC = -12 then the condition 1 expresses that gene much less
-than the condition 2.</p>
-</div>
+<div id="overexpression-analysis" class="section level2">
+<h2>6. Overexpression analysis</h2>
+<p>Using GO, find what are the enriched BP for the DE genes to have an
+overview of what is going on inside the cells under different
+conditions.</p>
 </div>
 </div>
 
