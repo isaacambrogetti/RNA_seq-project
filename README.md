@@ -7,7 +7,7 @@ The dataset includes 3-5 replicates from lungs tissues of mice with two differen
 and interferon alpha/gamma receptor double knockout). These mice were either infected with toxoplasma or are uninfected
 controls.
 
-The fastq files are here: `/data/courses/rnaseq_course/toxoplasma_de`, where you also find a README file with sample information on which group they belong to. The samples are a subset from `Singhania et al. 2019` and the fastq files were downloaded through the Gene Expression Omnibus (GEO), accession GSE119855. 
+The fastq files are here: `/data/courses/rnaseq_course/toxoplasma_de/reads_Lung`, where you also find a README file with sample information on which group they belong to. The samples are a subset from `Singhania et al. 2019` and the fastq files were downloaded through the Gene Expression Omnibus (GEO), accession GSE119855. 
 The library preparation protocol was strand-specific and the libraries were sequenced on an Illumina HiSeq 4000 in paired-end mode.
 
 
