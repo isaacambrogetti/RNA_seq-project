@@ -10,15 +10,15 @@
 #SBATCH --mail-type=end,error \
 #SBATCH --mail-user=isaac.ambrogetti@unifr.ch \
 
-module load FastQC/0.11.9-Java-11 
-module load fastp/0.23.4-GCC-10.3.0
+# load modules for fastqc
+module load FastQC/0.11.9-Java-11
 
+# set input and output directories
 INPUT_DIR="/data/users/iambrogetti/RNA-seq/reads_Lung"
 OUTPUT_DIR="/data/users/iambrogetti/RNA-seq/qc_output"
 
+# run fastqc on the sample in input
 fastqc "${1}" -o "$OUTPUT_DIR" -t $SLURM_CPUS_PER_TASK
 
-echo "FastQC for SRR7821918_1.fastq.gz completed"
-
-
-
+# debugging and progress report check
+echo "FastQC for ${1} completed"
