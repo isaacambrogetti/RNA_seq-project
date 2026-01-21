@@ -152,7 +152,9 @@ In order to do so extract the pairwise comparison results using `DESeq::results(
 Checking adjusted p-value and logFC allows us to find the most relevant DE genes and understand how much they are under/over-expressed. The plots helps us visualize them:
 
 - Heatmap (chosen for the report)
-- Volcano (plots version present in the DEanalysis.Rmd - not used in the report)
+- Volcano (plots version present in the DEanalysis_support.Rmd - not used in the report)
+
+Get the genes of interest and plot the boxplots for VST and test statistics for comparisons of interest.
 
 ## 6. Overexpression analysis
 Using GO, find what are the enriched BP for the DE genes to have an overview of what is going on inside the cells under different conditions.
