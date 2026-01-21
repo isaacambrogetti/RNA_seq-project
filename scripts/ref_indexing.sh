@@ -10,7 +10,7 @@
 #SBATCH --mail-type=end,error \
 #SBATCH --mail-user=isaac.ambrogetti@unifr.ch
 
-
+# set container, input and output directories
 CONTAINER="/containers/apptainer/hisat2_samtools_408dfd02f175cd88.sif"
 INPUT_DIR="/data/users/iambrogetti/RNA-seq/data/ref_genome/"
 OUTPUT_DIR="/data/users/iambrogetti/RNA-seq/data/ref_genome/Mus_musculus.GRCm39"
@@ -18,11 +18,13 @@ OUTPUT_DIR="/data/users/iambrogetti/RNA-seq/data/ref_genome/Mus_musculus.GRCm39"
 
 echo "Starting unzipping .fa and .gtf"
 
-gunzip -k "${INPUT_DIR}Mus_musculus.GRCm39.115.gtf.gz"  # needed unzipped in the featureCounts step
+# unzip the gtf and fa files of the genome, (gtf needed unzipped in the featureCounts step)
+gunzip -k "${INPUT_DIR}Mus_musculus.GRCm39.115.gtf.gz"
 gunzip -k "${INPUT_DIR}Mus_musculus.GRCm39.dna_sm.primary_assembly.fa.gz"
 
 echo "Starting reference genome indexing"
 
+# run apptainer command for hisat2-build to create the indexes for hisat2
 apptainer exec $CONTAINER hisat2-build \
     -f "${INPUT_DIR}Mus_musculus.GRCm39.dna_sm.primary_assembly.fa" \
     $OUTPUT_DIR \
