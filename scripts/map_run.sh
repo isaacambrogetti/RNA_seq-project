@@ -10,8 +10,11 @@
 #SBATCH --mail-type=end,error \
 #SBATCH --mail-user=isaac.ambrogetti@unifr.ch
 
+# set script file path for mapping
 FILE_PATH="/data/users/iambrogetti/RNA-seq/scripts/mapping_par.slurm"
 
+# for each element ending with _1.fastq.gz, set file 2 as the reverse complement and send a sbatch command for mapping 
+# with the two files in input and their name
 for file in /data/users/iambrogetti/RNA-seq/data/reads_Lung/*_1.fastq.gz; do
     file_2=${file%_1.fastq.gz}_2.fastq.gz
     sample_name=$(basename ${file%_1.fastq.gz})
