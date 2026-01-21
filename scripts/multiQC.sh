@@ -11,9 +11,10 @@
 #SBATCH --mail-user=isaac.ambrogetti@unifr.ch
 
 
-
+# set the directories of the multiqc container, input directory, and output directory
 CONTAINER="/containers/apptainer/multiqc-1.19.sif"
 INPUT_DIR="/data/users/iambrogetti/RNA-seq/data/qc_output"
 OUTPUT_DIR="/data/users/iambrogetti/RNA-seq/data/qc_output"
 
+# run the multiqc command via apptainer using as input every file in output from the QC of the fasta files
 apptainer exec ${CONTAINER} multiqc ${INPUT_DIR}/*fastqc.zip -o ${OUTPUT_DIR}
