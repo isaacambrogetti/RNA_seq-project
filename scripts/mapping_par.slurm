@@ -10,16 +10,17 @@
 #SBATCH --mail-type=end,error \
 #SBATCH --mail-user=isaac.ambrogetti@unifr.ch
 
-
+# set container, directory where to find the reference genome, the two reads of the same file in input, and the output directory in input
 CONTAINER="/containers/apptainer/hisat2_samtools_408dfd02f175cd88.sif"
 REF_DIR="/data/users/iambrogetti/RNA-seq/data/ref_genome/"
 READS_FILE_1=${1}
 READS_FILE_2=${2}
 OUTPUT_DIR="/data/users/iambrogetti/RNA-seq/data/sam/${3}.sam"
 
-
+# outputs the read files and the output directory for debugging and progress checking purposes
 echo -e "${READS_FILE_1}\n${READS_FILE_2}\n${OUTPUT_DIR}\n\n"
 
+# run the command to execute the mapping with hisat2
 apptainer exec $CONTAINER hisat2 \
     -x "${REF_DIR}Mus_musculus.GRCm39" \
     -1 $READS_FILE_1 -2 $READS_FILE_2 -S $OUTPUT_DIR \
